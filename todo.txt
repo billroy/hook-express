@@ -1,0 +1,72 @@
+
+
+command tie-outs
+
+
+save/replace
+
+about
+github
+
+put delete-all on a dropdown button with delete one?
+    delete all
+
+issue: save where?
+    click on get /alice
+    edit a while
+    click save
+    should update existing /alice route
+        since path didn't change
+    change path to /bob
+    click save
+    should create new route to /bob
+        without changing /alice
+        (warn user?)
+
+
+test on
+    heroku
+    deis
+
+
+where delete all?
+where refresh?
+
+editor theme selector
+
+bug: duplicate entries
+    api: patch to replace (no)
+    => handle duplicate route assertions in post as update
+    => add hot-patch of function?  or delete/add?
+
+auth
+    separate admin+api auth from hooks and static served files
+
+---
+futures
+
+- host indicator
+- host status
+    - requests
+    - live?
+
+- versioned hooks
+
+- download hooks
+    - as uploadable http commands
+
+- detailed log view per hook
+
+- live hit counts on the edit screen via socket.io
+
+- set host
+    field to set/change host for the client
+
+- disable hook but leave it defined
+
+- libraries of hooks
+    - mysql
+    - mongo
+    - redis
+- save/restore hook sets
+- share hook sets

@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<!-- Copyright 2016 by Bill Roy -->
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>hook express</title>
+
+    <script src='https://code.jquery.com/jquery-2.2.0.min.js' type='text/javascript'></script>
+
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+
+    <!-- Optional theme -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap-theme.min.css" integrity="sha384-fLW2N01lMqjakBkx3l/M9EahuwpSfeNvV63J5ezn3uZzapT0u7EYsXMjQV+0En5r" crossorigin="anonymous">
+
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
+
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.js' type='text/javascript'></script>
+    <link href='https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/css/toastr.css' rel='stylesheet' type='text/css'/>
+
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.3/ace.js' type='text/javascript'></script>
+    <script src='/editor/js/handlebars-v4.0.5.js' type='text/javascript'></script>
+
+    <link href='/editor/css/main.css' rel='stylesheet' type='text/css'>
+
+</head>
+<body>
+
+<script type='text/javascript'>
+
+var hooks = [];
+
+function renderHookPane() {
+    var markup = '';
+    var source = $('#hook-list-template').html();
+    var template = Handlebars.compile(source);
+    $.each(hooks, function(index, hook) {
+        hook.index = index;
+        markup += template(hook);
+    });
+    $('#hooks').html(markup);
+}
+
+function loadHookPane() {
+    $.ajax('/hooks', {
+        success: function(data, textstatus, jqxhr) {
+
+            // convert the object to an array
+            hooks = [];
+            Object.keys(data).forEach(function(key) {
+                var hook = data[key];
+                hooks.push(hook);
+            });
+
+            renderHookPane();
+            if (hooks.length) selectHook(null, 0);
+        },
+        error: function(jqxhr, textstatus, errorthrown) {
+            showError('Error: ' + textstatus + ' ' + errorthrown);
+         }
+    });
+}
+
+function getIndex(hookurl) {
+    for (var i=0; i < hooks.length; i++) {
+        if (hooks[i].source == hookurl) return i;
+    }
+    return undefined;
+};
+
+
+var editor;
+var editorChanges;
+
+function renderEditor(hook) {
+    editor.setValue(hook.hook);
+    editorChanges = 0;
+    hideSaveCancel();
+    editor.moveCursorTo(0, 0);
+    editor.clearSelection();
+    $('#path').val(hook.path);
+    $('#method').val(hook.method);
+}
+
+function hookItemSelector(index) {
+    return 'div#hooks span.hook-list-item:nth-child(' + (index * 2 + 1) + ')';
+}
+
+var selectedHook = -1;
+
+function selectHook(event, index) {
+    if (index > hooks.length) return alert('Error: hook index out of range');
+
+    if (selectedHook >= 0) $(hookItemSelector(selectedHook)).removeClass('selected');
+    selectedHook = index;
+    if (selectedHook >= 0) {
+        $(hookItemSelector(selectedHook)).addClass('selected');
+        renderEditor(hooks[selectedHook]);
+    }
+}
+
+
+// Toastr
+toastr.options = {
+    "closeButton": false,
+    "debug": false,
+    "newestOnTop": false,
+    "progressBar": false,
+    "positionClass": "toast-top-right",
+    "preventDuplicates": false,
+    "onclick": null,
+    "showDuration": "300",
+    "hideDuration": "1000",
+    "timeOut": "5000",
+    "extendedTimeOut": "1000",
+    "showEasing": "swing",
+    "hideEasing": "linear",
+    "showMethod": "fadeIn",
+    "hideMethod": "fadeOut"
+};
+function showError(msg) { toastr.error(msg); }
+function showWarning(msg) { toastr.warning(msg); }
+function showInfo(msg) { toastr.info(msg); }
+//showInfo('XXX here!');
+
+
+function setWorkspaceHeight() {
+    var windowHeight = $(window).height();
+    var footer = $('#footer');
+    var excess = footer.position().top + footer.height() - windowHeight;
+    var workspaceHeight = $('#workspace').height();
+    var newHeight = workspaceHeight - excess;
+    $('#workspace').height(newHeight);
+}
+
+function showSaveCancel() {
+    $('#cmd_save_edit').show();
+    $('#cmd_cancel_edit').show();
+}
+
+function hideSaveCancel() {
+    $('#cmd_save_edit').hide();
+    $('#cmd_cancel_edit').hide();
+}
+
+function newHook() {
+    selectHook(null, -1);
+    renderEditor({
+        method: 'get',
+        path: '',
+        hook: 'res.send("Hello, world!");'
+    });
+    // TODO: select all the text in the edit window so typing clears it?
+}
+
+function deleteHook() {
+    if (!confirm('Delete this hook?')) return;
+    if (selectedHook < 0) {
+        showError('Select a hook to delete');
+        return;
+    }
+    $.ajax('/hooks/' + hooks[selectedHook].hookId, {
+        method: 'delete',
+        success: function(data, textstatus, jqxhr) {
+            showInfo('Deleted.');
+            loadHookPane();
+            // TODO: what should be selected?
+            selectHook(null, 0);
+        },
+        error: function(jqxhr, textstatus, errorthrown) {
+            showError('Error: ' + textstatus + ' ' + errorthrown);
+         }
+    });
+
+}
+
+function deleteAllHooks() {
+}
+
+function saveEdit() {
+    // disallow save with null path
+    var path = $('#path').val();
+    if (!path) return alert('Specify a path to save the hook');
+
+    // disallow save with null editor contents
+
+    // post the new hook
+    $.ajax('/hooks', {
+        method: 'post',
+        data: JSON.stringify({
+            path: $('#path').val(),
+            method: $('#method').val(),
+            hook: editor.getValue()
+        }),
+        contentType: 'application/json',
+        success: function(data, textstatus, jqxhr) {
+            showInfo('Hook created.');
+            loadHookPane();
+            // TODO: what should be selected?
+            selectHook(null, 0);
+        },
+        error: function(jqxhr, textstatus, errorthrown) {
+            showError('Error: ' + textstatus + ' ' + errorthrown);
+         }
+    });
+
+
+}
+
+function cancelEdit() {
+    if (!confirm('Discard changes?')) return;
+    selectHook(null, selectedHook);
+}
+
+function showAbout() {}
+function showGithub() {}
+
+
+$(document).ready(function() {
+    loadHookPane();
+
+    // one-time editor initialization
+    editor = ace.edit('editor');
+    editor.$blockScrolling = Infinity;      // to disable deprecation warning
+    editor.session.setMode("ace/mode/javascript");
+    editor.setFontSize(18);
+    editor.setValue('res.send("Welcome to hook-express.");');
+    //editor.setTheme('ace/theme/tomorrow_night_blue');
+    //editor.setTheme("ace/theme/twilight");
+    editor.setTheme("ace/theme/cobalt");
+
+    // enable save and cancel when editor change detection fires
+    editor.on('change', function(e) {
+        console.log('editor change:', e);
+        editorChanges++;
+        showSaveCancel();
+    });
+
+    $(document).keydown(function(event) {
+        console.log('keydown:', event);
+        if ((event.keyCode == 38) && (selectedHook > 0)) selectHook(event, selectedHook - 1);   // up
+        else if ((event.keyCode == 40) && (selectedHook < Object.keys(hooks).length-1)) selectHook(event, selectedHook + 1);    // down
+    });
+
+    setWorkspaceHeight();
+    $(window).resize(setWorkspaceHeight);
+
+    // bind commands to buttons
+    $('#cmd_new_hook').on('click', newHook);
+    $('#cmd_delete_hook').on('click', deleteHook);
+    $('#cmd_save_edit').on('click', saveEdit);
+    $('#cmd_cancel_edit').on('click', cancelEdit);
+
+    $('#method').on('change', showSaveCancel);
+    $('#path').on('input', showSaveCancel);
+});
+
+</script>
+
+
+<!-- Templates -->
+<script id='hook-list-template' type='text/x-handlebars-template'>
+    <span class='hook-list-item' onclick='selectHook(event, {{index}})'>{{method}} {{path}}</span><br>
+</script>
+
+
+<!-- Page structure -->
+<div class='container'>
+    <div class='row'>
+        <div id='header' class='col-lg-12 header'>
+            <span style='float:left'>&bull;&nbsp;hook express</span>
+            <span style='float:right'></span>
+        </div>
+    </div>
+    <div class='row' id='commands' class='commands'>
+        <div id='hook-header' class='col-lg-3' dropdown>
+<!--
+            <button id='hook_menu' class='btn btn-default dropdown-toggle' type='button'
+                data-toggle='dropdown'>Hooks <span class="caret"></span>
+            </button>
+            <ul class='dropdown-menu'>
+                <li><a href='#'>New</a></li>
+                <li><a href='#'>Edit</a></li>
+                <li><a href='#'>Delete</a></li>
+                <li><a href='#'>Delete All</a></li>
+            </ul>
+        -->
+            <button id='cmd_new_hook' type="button" class="btn btn-primary btn-sm" aria-label="New">
+                <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
+                <span>new hook</span>
+            </button>
+            <button id='cmd_delete_hook' type="button" class="btn btn-danger btn-sm" aria-label="Delete">
+                <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+                <span>delete hook</span>
+            </button>
+        </div>
+        <div id='editor-header' class='col-lg-9'>
+            <select id='method' name='method'>
+                <option value='get'>get</option>
+                <option value='post'>post</option>
+                <option value='put'>put</option>
+                <option value='patch'>patch</option>
+                <option value='delete'>delete</option>
+                <option value='options'>options</option>
+                <option value='head'>head</option>
+            </select>
+            <input id='path' type='text' value='' placeholder='/path' class='path-control'></input>
+            <button id='cmd_save_edit' type="button" class="btn btn-danger btn-sm" aria-label="Save">
+              <span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
+              <span>save</span>
+            </button>
+            <button id='cmd_cancel_edit' type="button" class="btn btn-danger btn-sm" aria-label="Cancel">
+              <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+              <span>cancel</span>
+            </button>
+            <div class="btn-group" style='float:right'>
+                <button class="btn btn-success btn-sm dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                more... <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a href='#'>about</a></li>
+                    <li><a href='#'>github</a></li>
+                    <li><a href='#'><hr/></a></li>
+                    <li><a href='#'>delete all</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class='row' id='workspace'>
+        <div id='hooks' class='col-lg-3 hooks'>hooks</div>
+        <div id='editor' class='col-lg-9 editor'>editor</div>
+    </div>
+<!--
+    <div class='row' id='button-row'>
+        <div id='hook-header' class='col-lg-3'>
+            <button id='cmd_new_hook' class='btn btn-primary'>new</button>
+            <button id='cmd_duplicate_hook' class='btn btn-primary'>duplicate</button>
+            <button id='cmd_delete_hook' class='btn btn-primary'>delete</button>
+        </div>
+        <div id='editor-header' class='col-lg-9'>
+            <button id='cmd_save_edit' type="button" class="btn btn-danger" aria-label="Save">
+              <span class="glyphicon glyphicon-floppy-save" aria-hidden="true"></span>
+            </button>
+            <button id='cmd_cancel_edit' type="button" class="btn btn-danger navbar-btn" aria-label="Cancel">
+              <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+            </button>
+        </div>
+    </div>
+-->
+    <div id='footer' class='col-lg-12 footer'>
+        <center><span>&copy; 2016 by Bill Roy</span></center>
+    </div>
+</div>
+</body>
+</html>

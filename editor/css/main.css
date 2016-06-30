@@ -1,0 +1,82 @@
+
+body {
+    font-family: Sans-Serif;
+    background-color: lightgray;
+}
+
+.header {
+    height: 48px;
+    background-color: black;
+    color: white;
+    font-weight: bold;
+    font-size: 24pt;
+}
+
+#commands {
+    padding-top: 8px;
+    height: 48px;
+    background-color: darkgray;
+}
+
+.path-control {
+    width: 250px;
+}
+
+.footer {
+    font-size: 10px;
+}
+
+.hooks {
+    height: 100%;
+    overflow-x: hidden;
+    overflow-y: scroll;
+    border: 1px solid gray;
+    white-space: nowrap;
+}
+
+.hook-list-item {
+    width: 100%;
+    display: inline-block;
+    padding-left: 0.5em;
+    padding-top: 0.1em;
+    padding-bottom: 0.1em;
+}
+
+.right-pane-container {
+    float: right;
+    border: 1px solid red;
+}
+
+.hook-title {
+    display: inline-block;
+    width: 100%;
+    height: 22px;
+    border: 0.5em;
+    font-size: 12pt;
+    font-weight: bold;
+    background-color: #eaefef;
+    padding-top: 0.1em;
+    padding-left: 0.5em;
+    border: 1px solid gray;
+    overflow: hidden;
+}
+
+.editor {
+    /*float: right;*/
+    /* display: inline-block;*/
+    /* width: 100%;*/
+    height: 100%;
+    /* border: 0.5em; */
+    /*font-size: 10pt;
+    font-weight: bold;
+    border: 1px solid green;
+    overflow-x: hidden;
+    overflow-y: scroll;
+    white-space: nowrap;*/
+}
+
+.selected {
+    background-color: dodgerblue !important;
+    color: white;
+    font-weight: bold;
+}
