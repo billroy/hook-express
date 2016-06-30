@@ -10,10 +10,12 @@ function env(key, default_value) {
 
 // parse command line arguments
 var argv = require('yargs')
-    .usage('Usage: $0 --port=[3000] --auth --ssl')
+    .usage('Usage: $0 --port=[3000] --auth --ssl --editor_url=[/editor] --api_url=[/hooks]')
     .default('port', env('PORT', 3000))
     .default('auth', env('AUTH', false))
     .default('ssl', env('SSL', false))
+    .default('editor_url', env('EDITOR_URL', '/editor'))
+    .default('api_url', env('API_URL', '/hooks'))
     .argv;
 
 console.log('hook-express here! v0.1');
@@ -104,24 +106,15 @@ app.use(function(req, res, next) {
 
 // find hook in app._routes for monkey-patching
 function findHook(hook) {
-    console.log('FINDHOOK:', -2, hook);
     if (!hook.hookId) return undefined;
     for (var i=0; i < app._router.stack.length; i++) {
-        console.log('FINDHOOK:', -1);
         var item = app._router.stack[i];
-        console.log('FINDHOOK:', 0, item);
         if (!item.route) continue;
-        console.log('FINDHOOK:', 0.5);
         if (item.route.path != hook.path) continue;
-        console.log('FINDHOOK:', 1);
         if (!item.route.stack) continue;
-        console.log('FINDHOOK:', 2);
         if (!item.route.stack.length) continue;
-        console.log('FINDHOOK:', 3);
         if (item.route.stack[0].method != hook.method) continue;
-        console.log('FINDHOOK:', 4);
         if (item.route.stack[0].name != hook.hookId) continue;
-        console.log('hook found:', item.route.stack[0]);
         return item.route.stack[0];
     }
     return undefined;
@@ -137,39 +130,8 @@ function hookFunctionText(hook) {
     return hookText;
 }
 
-/*
-// update an existing hook, or create a new one
-function updateHook(hook) {
 
-    // existing hook: if a route matching the hookId, method, and path exists,
-    // replace its hook function
-    var route = findHook(hook);
-    if (route) {
-        try {
-            // monkey-patch route.handle with hook function by same name
-            route.handle = require_from_string(hookFunctionText(hook));
-            hooks[hookId] = hook;
-            return res.send(hook);
-        } catch(err) {
-            console.log('Error updating hook:', err);
-            return res.status(500).send(err);
-        }
-    }
-
-    // matching hook does not exist; insert a new one
-    try {
-        hook.hookId = 'hook_' + nextHookId++;   // assign new hookId
-        app[method.toLowerCase()](req.body.path, require_from_string(hookFunctionText(hook)));
-        hooks[hookId] = hook;
-        res.send(hook);
-    } catch(err) {
-        console.log('Error creating hook:', err);
-        res.status(500).send(err);
-    }
-}
-*/
-
-app.post('/hooks', function(req, res) {
+app.post(argv.api_url, function(req, res) {
 
     var hook = {};
 
@@ -215,49 +177,17 @@ app.post('/hooks', function(req, res) {
         console.log('Error creating hook:', err);
         res.status(500).send(err);
     }
-
-/***
-////////////////////////////////
-    // assign hookId
-    var hookId = 'hook_' + nextHookId++;
-
-    // build hook function text
-    var hookText = [
-        'module.exports = function ' + hookId + '(req, res) {',
-            req.body.hook,
-        '};'
-    ].join('\n');
-    //console.log('hookText:', hookText);
-
-    // configure the hook
-    try {
-        var hookFunction = require_from_string(hookText);
-        app[method.toLowerCase()](req.body.path, hookFunction);
-        hooks[hookId] = {
-            method: method,
-            path: req.body.path,
-            hook: req.body.hook,
-            hookId: hookId
-        };
-        res.send(hooks[hookId]);
-    } catch(err) {
-        console.log('Error:', err);
-        res.status(500).send(err);
-    }
-/////////////////////////////////
-***/
 });
 
-app.get('/hooks', function(req, res) {
+app.get(argv.api_url, function(req, res) {
     // TODO: convert to array of hooks here, instead of sending object
     res.send(hooks);
 });
 
-app.get('/hooks/:hookId', function(req, res) {
+app.get(argv.api_url + '/:hookId', function(req, res) {
     if (req.params.hookId in hooks) res.send(hooks[req.params.hookId]);
     else res.status(404).send('not found');
 });
-
 
 function removeHook(hookId) {
     if (!(hookId in hooks)) return false;
@@ -274,7 +204,7 @@ function removeHook(hookId) {
     return true;
 }
 
-app.delete('/hooks/:hookId', function(req, res) {
+app.delete(argv.api_url + '/:hookId', function(req, res) {
     if (req.params.hookId == '*') {
         Object.keys(hooks).forEach(function(hookId) {
             removeHook(hookId);
@@ -310,7 +240,7 @@ app.get('/routelist', function(req, res) {
 
 
 app.use('/', express.static(__dirname + '/public'));
-app.use('/editor', express.static(__dirname + '/editor'));
+app.use(argv.editor_url, express.static(__dirname + '/editor'));
 
 var listener = app.listen(argv.port, function() {
     console.log('Server is listening at:', listener.address());

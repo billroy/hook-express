@@ -12,7 +12,13 @@ auth
 
     the hooks
     static served files mounted under /
-    
+
+SSL support
+    and make it easy
+
+get-all-hooks should return an array, not an object
+    remove conversion-to-object in client
+
 security
     require('fs') problem
     run like node-red functions
