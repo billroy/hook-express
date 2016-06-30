@@ -1,41 +1,52 @@
 
-bug: duplicate entries
-    api: patch to replace (no)
-    => handle duplicate route assertions in post as update
-    => add hot-patch of function?  or delete/add?
-
-save/replace
-
-issue: save where?
-    click on get /alice
-    edit a while
-    click save
-    should update existing /alice route
-        since path didn't change
-    change path to /bob
-    click save
-    should create new route to /bob
-        without changing /alice
-        (warn user?)
-
-showAbout
-
 where delete all?
-    put delete-all on a dropdown button with delete selected hook
-    delete ALL HOOKS
-
-clear editor on delete?
-    select what on delete?
-
-test on
-    heroku
-    deis
+put delete-all on a dropdown button with delete selected hook
+delete ALL HOOKS
 
 auth
     separate admin+api auth from hooks and static served files
 
+    /hooks/**,
+    /editor/**,
+    /routeList
+
+    the hooks
+    static served files mounted under /
+    
+security
+    require('fs') problem
+    run like node-red functions
+        controlled context
+    eventually you'll have fs privs and database privs anyway
+
+bug:
+click hook_1 and change the text
+click hook_2
+the change to hook_1 is lost without warning
+
+showAbout
+
+clear editor on delete?
+    select what on delete?
+
+delete all should empty the path control
+
+after saving an item the cursor should end up on that item
+    there should be less flash in the hook list
+
+bug: new hook (no hookId) on existing path/method pair
+    new hook
+    set path to an existing hook
+    save
+    should message or replace existing hook
+    instead, creates unhittable route
+
 ---
 futures
+
+- test on
+    heroku
+    deis
 
 - editor theme selector
 - host indicator

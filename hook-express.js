@@ -102,18 +102,122 @@ app.use(function(req, res, next) {
     next();
 });
 
+// find hook in app._routes for monkey-patching
+function findHook(hook) {
+    console.log('FINDHOOK:', -2, hook);
+    if (!hook.hookId) return undefined;
+    for (var i=0; i < app._router.stack.length; i++) {
+        console.log('FINDHOOK:', -1);
+        var item = app._router.stack[i];
+        console.log('FINDHOOK:', 0, item);
+        if (!item.route) continue;
+        console.log('FINDHOOK:', 0.5);
+        if (item.route.path != hook.path) continue;
+        console.log('FINDHOOK:', 1);
+        if (!item.route.stack) continue;
+        console.log('FINDHOOK:', 2);
+        if (!item.route.stack.length) continue;
+        console.log('FINDHOOK:', 3);
+        if (item.route.stack[0].method != hook.method) continue;
+        console.log('FINDHOOK:', 4);
+        if (item.route.stack[0].name != hook.hookId) continue;
+        console.log('hook found:', item.route.stack[0]);
+        return item.route.stack[0];
+    }
+    return undefined;
+}
+
+function hookFunctionText(hook) {
+    var hookText = [
+        'module.exports = function ' + hook.hookId + '(req, res) {',
+            hook.hook,
+        '};'
+    ].join('\n');
+    //console.log('hookText:', hookText);
+    return hookText;
+}
+
+/*
+// update an existing hook, or create a new one
+function updateHook(hook) {
+
+    // existing hook: if a route matching the hookId, method, and path exists,
+    // replace its hook function
+    var route = findHook(hook);
+    if (route) {
+        try {
+            // monkey-patch route.handle with hook function by same name
+            route.handle = require_from_string(hookFunctionText(hook));
+            hooks[hookId] = hook;
+            return res.send(hook);
+        } catch(err) {
+            console.log('Error updating hook:', err);
+            return res.status(500).send(err);
+        }
+    }
+
+    // matching hook does not exist; insert a new one
+    try {
+        hook.hookId = 'hook_' + nextHookId++;   // assign new hookId
+        app[method.toLowerCase()](req.body.path, require_from_string(hookFunctionText(hook)));
+        hooks[hookId] = hook;
+        res.send(hook);
+    } catch(err) {
+        console.log('Error creating hook:', err);
+        res.status(500).send(err);
+    }
+}
+*/
+
 app.post('/hooks', function(req, res) {
+
+    var hook = {};
+
     // validate method
     var method = req.body.method || 'get';
     if (http.METHODS.indexOf(method.toUpperCase()) < 0) return res.status(400).send('unsupported http method');
     if (!(method.toLowerCase() in app)) return res.status(400).send('unsupported app method');
+    hook.method = method;
 
     // validate path
     if (!req.body.path) return res.status(400).send('path parameter not specified');
+    hook.path = req.body.path;
 
     // validate hook
     if (!req.body.hook) return res.status(400).send('hook parameter not specified');
+    hook.hook = req.body.hook;
 
+    // transfer hookId if specified
+    if (req.body.hookId) hook.hookId = req.body.hookId;
+
+    // existing hook: if a route matching the hookId, method, and path exists,
+    // replace its hook function
+    var route = findHook(hook);
+    if (route) {
+        try {
+            // monkey-patch route.handle with hook function by same name
+            route.handle = require_from_string(hookFunctionText(hook));
+            hooks[hook.hookId] = hook;
+            return res.send(hook);
+        } catch(err) {
+            console.log('Error updating hook:', err);
+            return res.status(500).send(err);
+        }
+    }
+
+    // matching hook does not exist; insert a new one
+    try {
+        hook.hookId = 'hook_' + nextHookId++;   // assign new hookId
+        app[method.toLowerCase()](req.body.path, require_from_string(hookFunctionText(hook)));
+        hooks[hook.hookId] = hook;
+        res.send(hook);
+    } catch(err) {
+        console.log('Error creating hook:', err);
+        res.status(500).send(err);
+    }
+
+/***
+////////////////////////////////
     // assign hookId
     var hookId = 'hook_' + nextHookId++;
 
@@ -140,9 +244,12 @@ app.post('/hooks', function(req, res) {
         console.log('Error:', err);
         res.status(500).send(err);
     }
+/////////////////////////////////
+***/
 });
 
 app.get('/hooks', function(req, res) {
+    // TODO: convert to array of hooks here, instead of sending object
     res.send(hooks);
 });
 
@@ -182,11 +289,14 @@ app.delete('/hooks/:hookId', function(req, res) {
 
 
 app.get('/routelist', function(req, res) {
-    console.log('app.views:', app.get('views'));
     console.log('_router:', app._router);
     var output = [];
     app._router.stack.forEach(function(route) {
         console.log(route.name, route.path, route.keys, route.regexp, route.route);
+
+        if (route && route.route && route.route.stack && route.route.stack.length)
+            console.log('function:', route.route.stack[0].handle);
+
         output.push({
             name: route.name,
             path: route.path,
