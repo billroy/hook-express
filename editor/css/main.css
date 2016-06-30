@@ -1,11 +1,12 @@
 
 body {
     font-family: Sans-Serif;
-    background-color: lightgray;
+    background-color: #004000;
 }
 
 .header {
-    height: 48px;
+    height: 60px;
+    padding-top: 6px;
     background-color: black;
     color: white;
     font-weight: bold;
@@ -30,6 +31,7 @@ body {
     height: 100%;
     overflow-x: hidden;
     overflow-y: scroll;
+    background-color: lightgray;
     border: 1px solid gray;
     white-space: nowrap;
 }

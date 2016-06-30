@@ -1,9 +1,13 @@
-// hooky.js
+// hook-express.js
+//
+// Copyright 2016 by Bill Roy
+// MIT license
 //
 
 function env(key, default_value) {
     return process.env[key] || default_value;
 }
+
 // parse command line arguments
 var argv = require('yargs')
     .usage('Usage: $0 --port=[3000] --auth --ssl')
@@ -12,7 +16,7 @@ var argv = require('yargs')
     .default('ssl', env('SSL', false))
     .argv;
 
-console.log('Hook Hotel here! v0.1');
+console.log('hook-express here! v0.1');
 console.log(argv);
 
 var require_from_string = require('require-from-string');

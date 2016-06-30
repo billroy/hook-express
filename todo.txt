@@ -1,15 +1,10 @@
 
-
-command tie-outs
-
+bug: duplicate entries
+    api: patch to replace (no)
+    => handle duplicate route assertions in post as update
+    => add hot-patch of function?  or delete/add?
 
 save/replace
-
-about
-github
-
-put delete-all on a dropdown button with delete one?
-    delete all
 
 issue: save where?
     click on get /alice
@@ -23,21 +18,18 @@ issue: save where?
         without changing /alice
         (warn user?)
 
+showAbout
+
+where delete all?
+    put delete-all on a dropdown button with delete selected hook
+    delete ALL HOOKS
+
+clear editor on delete?
+    select what on delete?
 
 test on
     heroku
     deis
-
-
-where delete all?
-where refresh?
-
-editor theme selector
-
-bug: duplicate entries
-    api: patch to replace (no)
-    => handle duplicate route assertions in post as update
-    => add hot-patch of function?  or delete/add?
 
 auth
     separate admin+api auth from hooks and static served files
@@ -45,6 +37,7 @@ auth
 ---
 futures
 
+- editor theme selector
 - host indicator
 - host status
     - requests

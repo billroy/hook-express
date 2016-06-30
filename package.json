@@ -1,8 +1,8 @@
 {
-  "name": "hooky",
+  "name": "hook-express",
   "version": "0.0.1",
-  "description": "Hooks!",
-  "main": "hooky.js",
+  "description": "A web hook host and studio for ExpressJS.",
+  "main": "hook-express.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },

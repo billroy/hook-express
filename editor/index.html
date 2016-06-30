@@ -6,7 +6,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <title>hook express</title>
+    <title>hook-express</title>
 
     <script src='https://code.jquery.com/jquery-2.2.0.min.js' type='text/javascript'></script>
 
@@ -154,6 +154,7 @@ function newHook() {
         path: '',
         hook: 'res.send("Hello, world!");'
     });
+    hideSaveCancel();
     // TODO: select all the text in the edit window so typing clears it?
 }
 
@@ -166,7 +167,7 @@ function deleteHook() {
     $.ajax('/hooks/' + hooks[selectedHook].hookId, {
         method: 'delete',
         success: function(data, textstatus, jqxhr) {
-            showInfo('Deleted.');
+            showInfo('Hook deleted.');
             loadHookPane();
             // TODO: what should be selected?
             selectHook(null, 0);
@@ -179,6 +180,19 @@ function deleteHook() {
 }
 
 function deleteAllHooks() {
+    if (!confirm('Delete ALL HOOKS?')) return;
+    if (!confirm('Really, really delete ALL HOOKS?')) return;
+    $.ajax('/hooks/*', {
+        method: 'delete',
+        success: function(data, textstatus, jqxhr) {
+            showInfo('Hooks deleted.');
+            loadHookPane();
+        },
+        error: function(jqxhr, textstatus, errorthrown) {
+            showError('Error: ' + textstatus + ' ' + errorthrown);
+         }
+    });
+
 }
 
 function saveEdit() {
@@ -198,7 +212,7 @@ function saveEdit() {
         }),
         contentType: 'application/json',
         success: function(data, textstatus, jqxhr) {
-            showInfo('Hook created.');
+            showInfo('Hook saved.');
             loadHookPane();
             // TODO: what should be selected?
             selectHook(null, 0);
@@ -217,7 +231,10 @@ function cancelEdit() {
 }
 
 function showAbout() {}
-function showGithub() {}
+
+function showGithub() {
+    window.open('https://github.com/billroy/hook-express');
+}
 
 
 $(document).ready(function() {
@@ -272,7 +289,7 @@ $(document).ready(function() {
 <div class='container'>
     <div class='row'>
         <div id='header' class='col-lg-12 header'>
-            <span style='float:left'>&bull;&nbsp;hook express</span>
+            <span style='float:left'>&bull;&nbsp;hook-express</span>
             <span style='float:right'></span>
         </div>
     </div>
@@ -299,6 +316,7 @@ $(document).ready(function() {
             </button>
         </div>
         <div id='editor-header' class='col-lg-9'>
+            method:&nbsp;
             <select id='method' name='method'>
                 <option value='get'>get</option>
                 <option value='post'>post</option>
@@ -308,6 +326,7 @@ $(document).ready(function() {
                 <option value='options'>options</option>
                 <option value='head'>head</option>
             </select>
+            &nbsp;&nbsp;path:&nbsp;
             <input id='path' type='text' value='' placeholder='/path' class='path-control'></input>
             <button id='cmd_save_edit' type="button" class="btn btn-danger btn-sm" aria-label="Save">
               <span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
@@ -322,35 +341,18 @@ $(document).ready(function() {
                 more... <span class="caret"></span>
                 </button>
                 <ul class="dropdown-menu">
-                    <li><a href='#'>about</a></li>
-                    <li><a href='#'>github</a></li>
+                    <li><a href='javascript: showAbout();'>about</a></li>
+                    <li><a href='javascript: showGithub();'>github</a></li>
                     <li><a href='#'><hr/></a></li>
-                    <li><a href='#'>delete all</a></li>
+                    <li><a href='javascript: deleteAllHooks();'>delete all</a></li>
                 </ul>
             </div>
         </div>
     </div>
     <div class='row' id='workspace'>
-        <div id='hooks' class='col-lg-3 hooks'>hooks</div>
-        <div id='editor' class='col-lg-9 editor'>editor</div>
+        <div id='hooks' class='col-lg-3 hooks'></div>
+        <div id='editor' class='col-lg-9 editor'></div>
     </div>
-<!--
-    <div class='row' id='button-row'>
-        <div id='hook-header' class='col-lg-3'>
-            <button id='cmd_new_hook' class='btn btn-primary'>new</button>
-            <button id='cmd_duplicate_hook' class='btn btn-primary'>duplicate</button>
-            <button id='cmd_delete_hook' class='btn btn-primary'>delete</button>
-        </div>
-        <div id='editor-header' class='col-lg-9'>
-            <button id='cmd_save_edit' type="button" class="btn btn-danger" aria-label="Save">
-              <span class="glyphicon glyphicon-floppy-save" aria-hidden="true"></span>
-            </button>
-            <button id='cmd_cancel_edit' type="button" class="btn btn-danger navbar-btn" aria-label="Cancel">
-              <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
-            </button>
-        </div>
-    </div>
--->
     <div id='footer' class='col-lg-12 footer'>
         <center><span>&copy; 2016 by Bill Roy</span></center>
     </div>
