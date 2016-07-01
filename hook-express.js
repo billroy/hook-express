@@ -19,14 +19,16 @@ console.log(argv);
 
 var require_from_string = require('require-from-string');
 
+// initialize the express app
 var express = require('express');
-var app = express();            // create an express app
+var app = express();
+var http = require('http');
 app.set('x-powered-by', false);
 
+// configure json and url-encoded body parsers
 var bodyParser = require('body-parser');
 app.use(bodyParser.json());
-
-var http = require('http');
+app.use(bodyParser.urlencoded({extended: true}));
 
 // configure logging
 //var logger = require('morgan');
@@ -64,19 +66,14 @@ var apiUsers = [
         process.env.HOOK_EXPRESS_API_PASSWORD || 'express']
 ];
 
+function unauthorized(res) {
+    res.set('WWW-Authenticate', 'Basic realm=Hook Express');
+    return res.sendStatus(401);
+}
+
 function authenticate(req, res, next) {
-
-    // all authentications succeed if --auth is not true
-    //if (!argv.auth) return next();
-
-	function unauthorized(res) {
-		res.set('WWW-Authenticate', 'Basic realm=Authorization Required');
-		return res.sendStatus(401);
-	}
-
 	var user = basicAuth(req);
 	if (!user || !user.name || !user.pass) return unauthorized(res);
-
 	for (var u=0; u < apiUsers.length; u++) {
 		if ((user.name == apiUsers[u][0]) && (user.pass == apiUsers[u][1])) {
 			if (argv.debug) console.log('Authenticated access for user:', user.name);

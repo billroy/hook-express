@@ -1,11 +1,10 @@
-hook-express README.md
-7/1/16 -br
+# hook-express README.md
 
 ![Editor](https://raw.githubusercontent.com/billroy/hook-express/master/doc/editor.png "Using the editor")
 
 ![Command line](https://raw.githubusercontent.com/billroy/hook-express/master/doc/cli.png "Using the API")
 
-# What is it?
+## What is it?
 
 hook-express a micro-service host and laboratory for expressjs.  
 
@@ -14,7 +13,7 @@ The hook-express server is an expressjs web app that can live-edit its routing a
 The server exposes an API that provides for manipulation of hooks, and an editor interface for editing hooks through-the-web.
 
 
-# What is a hook?
+## What is a hook?
 
 A hook is a set of javascript statements that implement the business logic of an API endpoint for a micro-service.
 
@@ -28,7 +27,7 @@ The "hook" part is just the guts of the function:
 
     res.send(new Date());
 
-# Install
+## Install
 
     git clone https://github.com/billroy/hook-express.git
     cd hook-express
@@ -37,7 +36,7 @@ The "hook" part is just the guts of the function:
 
 Open a browser on http://localhost:3000/editor
 
-# Default username and password
+## Default username and password
 
 The editor and API require a username and password for access.  It is important to be aware that the code running in a hook has access to the local file system!
 
@@ -54,15 +53,15 @@ You can also add usernames to the 'apiUsers' table in hook-express.js.
 
 
 
-# Static files
+## Static files
 
 You can add files to be static-served to the public/ directory and hook-express will serve them at '/'.  So, the file public/index.html is the home page for the site.
 
-# HttPie
+## HttPie
 
 The examples below use the excellent "http" utility from HttPie: https://httpie.org -- it is well-suited for this sort of use because, unlike curl and wget, it has json-friendly defaults.
 
-# API Example: creating a web hook to return the time
+## API Example: creating a web hook to return the time
 
     $ http -b -a hook:express :3000/time
     Cannot GET /time
@@ -79,7 +78,7 @@ The examples below use the excellent "http" utility from HttPie: https://httpie.
     "2016-06-29T00:21:58.973Z"
 
 
-# API Example: fetching all hooks
+## API Example: fetching all hooks
 
     $ http -a hook:express :3000/hooks
     {
@@ -91,7 +90,7 @@ The examples below use the excellent "http" utility from HttPie: https://httpie.
         }
     }
 
-# API Example: fetching a single hook by hookId
+## API Example: fetching a single hook by hookId
 
         $ http -a hook:express :3000/hooks/hook_6
         {
@@ -104,7 +103,7 @@ The examples below use the excellent "http" utility from HttPie: https://httpie.
         }
 
 
-# API Example: deleting a hook
+## API Example: deleting a hook
 
     $ http delete -a hook:express :3000/hooks/hook_6
     deleted
@@ -113,7 +112,7 @@ The examples below use the excellent "http" utility from HttPie: https://httpie.
     {}
 
 
-# API Example: deleting all hooks
+## API Example: deleting all hooks
 
     $ http delete -a hook:express :3000/hooks/*
     deleted
