@@ -1,9 +1,9 @@
 TODO hook-express
 -br
 
-SSL support (and make it easy)
+separate user auth for hooks and static-served files
 
-auth for hooks and static-served files
+hook to add user to apiUsers
 
 get rid of server::hooks structure?
     - use routing tables directly
@@ -14,7 +14,7 @@ bug: hook exceptions return too much to client
 get-all-hooks should return an array, not an object
     remove conversion-to-object in client
 
-- better function sandbox (like node-red)
+better function sandbox (like node-red)
     security
     require('fs') problem
     run like node-red functions
@@ -26,13 +26,11 @@ inject "request" and whitelist requirable modules
 command line flag to load a hooks file at startup (from file: / http:)
 
 bug:
-click hook_1 and change the text
-click hook_2
-the change to hook_1 is lost without warning
+    click hook_1 and change the text
+    click hook_2
+    the change to hook_1 is lost without warning
 
 clear editor on delete? (of last hook)
-
-delete all should empty the path control
 
 method to lock/disable admin api until next restart
 
@@ -43,6 +41,8 @@ bug(?): new hook (no hookId) on existing path/method pair
     should message or replace existing hook
     instead, creates unhittable route
     error message for this case?
+
+passport integration for authentication
 
 ---
 futures

@@ -51,13 +51,28 @@ You can change the username and password by setting these environment variables 
 
 You can also add usernames to the 'apiUsers' table in hook-express.js.
 
+## An Important Security Note
 
+Code running in a hook has complete access to node modules like 'fs', so it can erase your file system, modify files, and so forth.  Change the default password, and keep your password safe.
 
 ## Static files
 
 You can add files to be static-served to the public/ directory and hook-express will serve them at '/'.  So, the file public/index.html is the home page for the site.
 
-## HttPie
+## Limitations and caveats
+
+Limitations of the current version:
+
+    - bound dispatch function names of the form "hook_<number>", like hook_1, are reserved
+    - nothing is persisted - the server starts up with no hooks defined
+    - the hooks and static files in public/ are served without authentication
+
+Caveats:
+
+    - anyone with the API username and password can write a hook that can modify your file system
+
+
+## The HttPie Tool
 
 The examples below use the excellent "http" utility from HttPie: https://httpie.org -- it is well-suited for this sort of use because, unlike curl and wget, it has json-friendly defaults.
 
@@ -69,7 +84,7 @@ The examples below use the excellent "http" utility from HttPie: https://httpie.
     $ http -b -a hook:express :3000/hooks path=/time hook='res.send(new Date());'
     {
         "hook": "res.send(new Date());",
-        "hookId": "hook_6",
+        "hookId": "hook_1",
         "method": "get",
         "path": "/time"
     }
@@ -82,9 +97,9 @@ The examples below use the excellent "http" utility from HttPie: https://httpie.
 
     $ http -a hook:express :3000/hooks
     {
-        "hook_6": {
+        "hook_1": {
             "hook": "res.send(new Date());",
-            "hookId": "hook_6",
+            "hookId": "hook_1",
             "method": "get",
             "path": "/time"
         }
@@ -92,11 +107,11 @@ The examples below use the excellent "http" utility from HttPie: https://httpie.
 
 ## API Example: fetching a single hook by hookId
 
-        $ http -a hook:express :3000/hooks/hook_6
+        $ http -a hook:express :3000/hooks/hook_1
         {
-            "hook_6": {
+            "hook_1": {
                 "hook": "res.send(new Date());",
-                "hookId": "hook_6",
+                "hookId": "hook_1",
                 "method": "get",
                 "path": "/time"
             }
@@ -105,10 +120,10 @@ The examples below use the excellent "http" utility from HttPie: https://httpie.
 
 ## API Example: deleting a hook
 
-    $ http delete -a hook:express :3000/hooks/hook_6
+    $ http delete -a hook:express :3000/hooks/hook_1
     deleted
 
-    $ http :3000/hooks
+    $ http -a hook:express :3000/hooks
     {}
 
 
@@ -116,3 +131,6 @@ The examples below use the excellent "http" utility from HttPie: https://httpie.
 
     $ http delete -a hook:express :3000/hooks/*
     deleted
+
+    $ http -a hook:express :3000/hooks
+    {}

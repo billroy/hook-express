@@ -9,9 +9,10 @@ function env(key, default_value) {
 
 // parse command line arguments
 var argv = require('yargs')
-    .usage('Usage: $0 --port=[3000] --ssl')
+    .usage('Usage: $0 --port=[3000] --ssl --certs=[~/.certs]')
     .default('port', env('PORT', 3000))
     .default('ssl', env('SSL', false))
+    .default('certs', env('SSL_CERTS', '~/.certs'))
     .argv;
 
 console.log('hook-express here! v0.1');
@@ -22,8 +23,10 @@ var require_from_string = require('require-from-string');
 // initialize the express app
 var express = require('express');
 var app = express();
+var helmet = require('helmet');
+app.use(helmet());
 var http = require('http');
-app.set('x-powered-by', false);
+var https = require('spdy');
 
 // configure json and url-encoded body parsers
 var bodyParser = require('body-parser');
@@ -241,6 +244,22 @@ app.use('/editor', authenticate, express.static(__dirname + '/editor'));
 // serve the static content to anyone
 app.use('/', express.static(__dirname + '/public'));
 
-var listener = app.listen(argv.port, function() {
+
+// configure SSL
+var server;
+var fs = require('fs');
+if (argv.ssl) {
+	console.log('Configuring SSL...');
+	var ssl_key = fs.readFileSync(argv.certs + '/server.key').toString();
+	var ssl_cert = fs.readFileSync(argv.certs + '/server.crt').toString();
+    server = https.createServer({key: ssl_key, cert: ssl_cert}, app);
+	//var ssl_cabundle = fs.readFileSync(argv.certs + '/server.cabundle').toString();
+	//server = https.createServer({key:ssl_key, cert:ssl_cert, ca:ssl_cabundle}, app);
+}
+else {
+	server = http.createServer(app);
+}
+
+var listener = server.listen(argv.port, function() {
     console.log('Server is listening at:', listener.address());
 });
