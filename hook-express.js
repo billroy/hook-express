@@ -136,8 +136,68 @@ function hookFunctionText(hook) {
 }
 
 
-app.post('/hooks', authenticate, function(req, res) {
+function saveHook(inputHook, next) {
 
+    var hook = {};
+
+    // validate method
+    var method = inputHook.method || 'get';
+    if (typeof method != 'string') return next('method parameter must be a string');
+    if (http.METHODS.indexOf(method.toUpperCase()) < 0) return next('unsupported http method');
+    if (!(method.toLowerCase() in app)) return next('unsupported app method');
+    hook.method = method;
+
+    // validate path
+    if (!inputHook.path) return next('path parameter not specified');
+    if (typeof inputHook.path != 'string') return next('path parameter must be a string');
+    hook.path = inputHook.path;
+
+    // validate hook
+    if (!inputHook.hook) return next('hook parameter not specified');
+    if (typeof inputHook.hook != 'string') return next('hook parameter must be a string');
+    hook.hook = inputHook.hook;
+
+    // transfer hookId if specified
+    if (inputHook.hookId) {
+        if (typeof inputHook.hookId != 'string') return next('hookId parameter must be a string');
+        hook.hookId = inputHook.hookId;
+    }
+
+    // existing hook: if a route matching the hookId, method, and path exists,
+    // replace its hook function
+    var route = findHook(hook);
+    if (route) {
+        try {
+            // monkey-patch route.handle with hook function by same name
+            route.handle = require_from_string(hookFunctionText(hook));
+            hooks[hook.hookId] = hook;
+            return next(null, hook);
+        } catch(err) {
+            console.log('Error updating hook:', err);
+            return next(err);
+        }
+    }
+
+    // matching hook does not exist; insert a new one
+    try {
+        hook.hookId = 'hook_' + nextHookId++;   // assign new hookId
+        app[hook.method.toLowerCase()](hook.path, require_from_string(hookFunctionText(hook)));
+        hooks[hook.hookId] = hook;
+        return next(null, hook);
+    } catch(err) {
+        console.log('Error creating hook:', err);
+        return next(err);
+    }
+}
+
+app.post('/hooks', authenticate, function(req, res) {
+    saveHook(req.body, function(err, hook) {
+        if (err) return res.status(400).send(err);
+        res.send(hook);
+    });
+});
+
+/***
     var hook = {};
 
     // validate method
@@ -183,6 +243,7 @@ app.post('/hooks', authenticate, function(req, res) {
         res.status(500).send(err);
     }
 });
+*/
 
 app.get('/hooks', authenticate, function(req, res) {
     // convert the hooks object to an array
@@ -253,15 +314,17 @@ app.use('/editor', authenticate, express.static(__dirname + '/editor'));
 // serve the static content to anyone
 app.use('/', express.static(__dirname + '/public'));
 
-/* TODO: factor out saveHook for uses like this
 // load startup hooks
 if (argv.load) {
     var startupHooks = JSON.parse(fs.readFileSync(argv.load).toString());
+    console.log('Loading startup hooks...');
     startupHooks.forEach(function(hook, index) {
-
+        console.log('loading hook:', hook);
+        saveHook(hook, function(err, hook) {
+            if (err) console.log('Load error:', hook, err);
+        });
     });
 }
-*/
 
 // configure SSL
 var server;

@@ -22,9 +22,6 @@ better function sandbox (like node-red)
 
 inject "request" and whitelist requirable modules
 
-argv.load: command line flag to load a hooks file at startup (from file: / http:)
-    - requires factoring out saveHook()
-
 bug:
     click hook_1 and change the text
     click hook_2
@@ -60,6 +57,12 @@ docker container recipe
 
 consider integrating for /public file manager:
     https://www.npmjs.com/package/cloudcmd
+
+limited-duration hooks
+    self-destruct in x minutes
+
+clone
+    var new = Object.assign({}, old);
 
 ---
 futures
