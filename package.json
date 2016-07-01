@@ -1,13 +1,17 @@
 {
   "name": "hook-express",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "A web hook host and studio for ExpressJS.",
   "main": "hook-express.js",
   "scripts": {
     "start": "HOOK_EXPRESS_API_USERNAME=hook HOOK_EXPRESS_API_PASSWORD=express node hook-express",
     "test": "test/test-hooks.sh"
   },
-  "author": "",
+  "author": "bill@bitlash.net",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/billroy/hook-express"
+  },
   "license": "MIT",
   "dependencies": {
     "body-parser": "^1.15.2",

@@ -48,14 +48,7 @@ function renderHookPane() {
 function loadHookPane(next) {
     $.ajax('/hooks', {
         success: function(data, textstatus, jqxhr) {
-
-            // convert the object to an array
-            hooks = [];
-            Object.keys(data).forEach(function(key) {
-                var hook = data[key];
-                hooks.push(hook);
-            });
-
+            hooks = data;
             renderHookPane();
             if (next) next();
             //if (hooks.length) selectHook(null, 0);
@@ -169,6 +162,7 @@ function newHook() {
         hook: 'res.send("Hello, world!");'
     });
     hideSaveCancel();
+    $('#path').focus();
     // TODO: select all the text in the edit window so typing clears it?
 }
 

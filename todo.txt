@@ -3,6 +3,8 @@ TODO hook-express
 
 separate user auth for hooks and static-served files
 
+argument validation: typeof x == string
+
 hook to add user to apiUsers
 
 get rid of server::hooks structure?
@@ -10,9 +12,6 @@ get rid of server::hooks structure?
 
 bug: hook exceptions return too much to client
     throw new Error('Baloney!');
-
-get-all-hooks should return an array, not an object
-    remove conversion-to-object in client
 
 better function sandbox (like node-red)
     security
@@ -23,7 +22,8 @@ better function sandbox (like node-red)
 
 inject "request" and whitelist requirable modules
 
-command line flag to load a hooks file at startup (from file: / http:)
+argv.load: command line flag to load a hooks file at startup (from file: / http:)
+    - requires factoring out saveHook()
 
 bug:
     click hook_1 and change the text
@@ -33,6 +33,7 @@ bug:
 clear editor on delete? (of last hook)
 
 method to lock/disable admin api until next restart
+    /hx/lock {"confirm": true, username:, password:}
 
 bug(?): new hook (no hookId) on existing path/method pair
     new hook
@@ -43,6 +44,22 @@ bug(?): new hook (no hookId) on existing path/method pair
     error message for this case?
 
 passport integration for authentication
+
+per-request log interrogation
+
+move the protected api to /hx/hooks?
+    /hookex/hooks
+    /hookex/logs
+    /hookex/lock
+    /hookex/users
+    where the editor?  /hookex/editor? /editor?
+
+bcrypt the passwords
+
+docker container recipe
+
+consider integrating for /public file manager:
+    https://www.npmjs.com/package/cloudcmd
 
 ---
 futures

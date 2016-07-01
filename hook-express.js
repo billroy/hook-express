@@ -12,6 +12,7 @@ var argv = require('yargs')
     .usage('Usage: $0 --port=[3000] --ssl --certs=[~/.certs]')
     .default('port', env('PORT', 3000))
     .default('ssl', env('SSL', false))
+    .default('load', env('LOAD_HOOKS', ''))
     .default('certs', env('SSL_CERTS', '~/.certs'))
     .argv;
 
@@ -19,6 +20,7 @@ console.log('hook-express here! v0.1');
 console.log(argv);
 
 var require_from_string = require('require-from-string');
+var fs = require('fs');
 
 // initialize the express app
 var express = require('express');
@@ -46,12 +48,15 @@ app.use(expressWinston.logger({
     transports: [
         new winston.transports.Console({
             json: true,
-            colorize: true
+            colorize: true,
+            silent: false,
+            prettyPrint: true,
+            timestamp: true
         })
     ],
     meta: true, // optional: control whether you want to log the meta data about the request (default to true)
     msg: "HTTP {{req.method}} {{req.url}}", // optional: customize the default logging message. E.g. "{{res.statusCode}} {{req.method}} {{res.responseTime}}ms {{req.url}}"
-    //expressFormat: true, // Use the default Express/morgan request formatting, with the same colors. Enabling this will override any msg and colorStatus if true. Will only output colors on transports with colorize set to true
+    expressFormat: true, // Use the default Express/morgan request formatting, with the same colors. Enabling this will override any msg and colorStatus if true. Will only output colors on transports with colorize set to true
     colorStatus: true, // Color the status code, using the Express/morgan color palette (default green, 3XX cyan, 4XX yellow, 5XX red). Will not be recognized if expressFormat is true
     ignoreRoute: function (req, res) { return false; } // optional: allows to skip some log messages based on request and/or response
 }));
@@ -180,8 +185,12 @@ app.post('/hooks', authenticate, function(req, res) {
 });
 
 app.get('/hooks', authenticate, function(req, res) {
-    // TODO: convert to array of hooks here, instead of sending object
-    res.send(hooks);
+    // convert the hooks object to an array
+    var output = [];
+    Object.keys(hooks).forEach(function(key) {
+        output.push(hooks[key]);
+    });
+    res.send(output);
 });
 
 app.get('/hooks/:hookId', authenticate, function(req, res) {
@@ -244,10 +253,18 @@ app.use('/editor', authenticate, express.static(__dirname + '/editor'));
 // serve the static content to anyone
 app.use('/', express.static(__dirname + '/public'));
 
+/* TODO: factor out saveHook for uses like this
+// load startup hooks
+if (argv.load) {
+    var startupHooks = JSON.parse(fs.readFileSync(argv.load).toString());
+    startupHooks.forEach(function(hook, index) {
+
+    });
+}
+*/
 
 // configure SSL
 var server;
-var fs = require('fs');
 if (argv.ssl) {
 	console.log('Configuring SSL...');
 	var ssl_key = fs.readFileSync(argv.certs + '/server.key').toString();
