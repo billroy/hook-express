@@ -33,6 +33,9 @@ security
 
 inject "request" and whitelist requirable modules
 
+command line flag to load a hooks file at startup (from file: / http:)
+
+
 bug:
 click hook_1 and change the text
 click hook_2

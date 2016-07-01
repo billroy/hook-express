@@ -1,7 +1,6 @@
 // hook-express.js
 //
-// Copyright 2016 by Bill Roy
-// MIT license
+// Copyright 2016 by Bill Roy - see LICENSE file
 //
 
 function env(key, default_value) {
@@ -25,14 +24,16 @@ var require_from_string = require('require-from-string');
 
 var express = require('express');
 var app = express();            // create an express app
+app.set('x-powered-by', false);
 var bodyParser = require('body-parser');
 app.use(bodyParser.json());
+var http = require('http');
+
+// configure logging
 //var logger = require('morgan');
 //app.use(logger('common'));
 var winston = require('winston');
 var expressWinston = require('express-winston');
-var http = require('http');
-app.set('x-powered-by', false);
 
 expressWinston.requestWhitelist.push('body');
 expressWinston.responseWhitelist.push('body');
