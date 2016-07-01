@@ -9,12 +9,9 @@ function env(key, default_value) {
 
 // parse command line arguments
 var argv = require('yargs')
-    .usage('Usage: $0 --port=[3000] --auth --ssl --editor_url=[/editor] --api_url=[/hooks]')
+    .usage('Usage: $0 --port=[3000] --ssl')
     .default('port', env('PORT', 3000))
-    .default('auth', env('AUTH', false))
     .default('ssl', env('SSL', false))
-    .default('editor_url', env('EDITOR_URL', '/editor'))
-    .default('api_url', env('API_URL', '/hooks'))
     .argv;
 
 console.log('hook-express here! v0.1');
@@ -25,8 +22,10 @@ var require_from_string = require('require-from-string');
 var express = require('express');
 var app = express();            // create an express app
 app.set('x-powered-by', false);
+
 var bodyParser = require('body-parser');
 app.use(bodyParser.json());
+
 var http = require('http');
 
 // configure logging
@@ -56,20 +55,19 @@ app.use(expressWinston.logger({
 // HTTP basic auth for express 4.0
 // via: https://davidbeath.com/posts/expressjs-40-basicauth.html
 //
-if (argv.auth) console.log('Server will use HTTP auth');
-else console.log('Server is starting without auth');
 var basicAuth = require('basic-auth');
 
-// user table
-var users = [
-    ['alpha', 'meatball'],
-	[process.env.HOOK_USERNAME, process.env.HOOK_PASSWORD]		// [username, password]
+// api user table seeded with default username and password
+var apiUsers = [
+    //['username', 'password'],
+	[process.env.HOOK_EXPRESS_API_USERNAME || 'hook',
+        process.env.HOOK_EXPRESS_API_PASSWORD || 'express']
 ];
 
 function authenticate(req, res, next) {
 
     // all authentications succeed if --auth is not true
-    if (!argv.auth) return next();
+    //if (!argv.auth) return next();
 
 	function unauthorized(res) {
 		res.set('WWW-Authenticate', 'Basic realm=Authorization Required');
@@ -77,12 +75,10 @@ function authenticate(req, res, next) {
 	}
 
 	var user = basicAuth(req);
-	if (!user || !user.name || !user.pass) {
-		return unauthorized(res);
-	}
+	if (!user || !user.name || !user.pass) return unauthorized(res);
 
-	for (var u=0; u < users.length; u++) {
-		if ((user.name == users[u][0]) && (user.pass == users[u][1])) {
+	for (var u=0; u < apiUsers.length; u++) {
+		if ((user.name == apiUsers[u][0]) && (user.pass == apiUsers[u][1])) {
 			if (argv.debug) console.log('Authenticated access for user:', user.name);
 			return next();
 		}
@@ -90,15 +86,18 @@ function authenticate(req, res, next) {
 	console.log('Unauthorized access attempt:', user.name, user.pass);
 	return unauthorized(res);
 }
-if (argv.auth) app.use(authenticate);
 
+// context passed in res.locals.context;
+// inject dependencies into your hooks by adding them here
 var context = {
-    db: 'database handle here',
-    requestCount: 0
+    requestCount: 0,
+    //db: 'perhaps a database handle here',
 };
+
 var hooks = {};
 var nextHookId = 1;
 
+// middleware to inject context as res.locals.context
 app.use(function(req, res, next) {
     context.requestCount++;
     res.locals.context = context;
@@ -132,7 +131,7 @@ function hookFunctionText(hook) {
 }
 
 
-app.post(argv.api_url, function(req, res) {
+app.post('/hooks', authenticate, function(req, res) {
 
     var hook = {};
 
@@ -180,12 +179,12 @@ app.post(argv.api_url, function(req, res) {
     }
 });
 
-app.get(argv.api_url, function(req, res) {
+app.get('/hooks', authenticate, function(req, res) {
     // TODO: convert to array of hooks here, instead of sending object
     res.send(hooks);
 });
 
-app.get(argv.api_url + '/:hookId', function(req, res) {
+app.get('/hooks/:hookId', authenticate, function(req, res) {
     if (req.params.hookId in hooks) res.send(hooks[req.params.hookId]);
     else res.status(404).send('not found');
 });
@@ -205,7 +204,7 @@ function removeHook(hookId) {
     return true;
 }
 
-app.delete(argv.api_url + '/:hookId', function(req, res) {
+app.delete('/hooks/:hookId', authenticate, function(req, res) {
     if (req.params.hookId == '*') {
         Object.keys(hooks).forEach(function(hookId) {
             removeHook(hookId);
@@ -218,8 +217,8 @@ app.delete(argv.api_url + '/:hookId', function(req, res) {
     }
 });
 
-
-app.get('/routelist', function(req, res) {
+// TODO: remove
+app.get('/routelist', authenticate, function(req, res) {
     console.log('_router:', app._router);
     var output = [];
     app._router.stack.forEach(function(route) {
@@ -239,9 +238,11 @@ app.get('/routelist', function(req, res) {
     res.send(output);
 });
 
+// serve the editor to authenticated users
+app.use('/editor', authenticate, express.static(__dirname + '/editor'));
 
+// serve the static content to anyone
 app.use('/', express.static(__dirname + '/public'));
-app.use(argv.editor_url, express.static(__dirname + '/editor'));
 
 var listener = app.listen(argv.port, function() {
     console.log('Server is listening at:', listener.address());

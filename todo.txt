@@ -1,23 +1,12 @@
 TODO hook-express
 -br
 
-- auth on api and editor
-- ssl
+SSL support (and make it easy)
 
-- better function sandbox (like node-red)
+auth for hooks and static-served files
 
-auth
-    separate admin+api auth from hooks and static served files
-
-    /hooks/**,
-    /editor/**,
-    /routeList
-
-    the hooks
-    static served files mounted under /
-
-SSL support
-    and make it easy
+get rid of server::hooks structure?
+    - use routing tables directly
 
 bug: hook exceptions return too much to client
     throw new Error('Baloney!');
@@ -25,7 +14,8 @@ bug: hook exceptions return too much to client
 get-all-hooks should return an array, not an object
     remove conversion-to-object in client
 
-security
+- better function sandbox (like node-red)
+    security
     require('fs') problem
     run like node-red functions
         controlled context
@@ -34,7 +24,6 @@ security
 inject "request" and whitelist requirable modules
 
 command line flag to load a hooks file at startup (from file: / http:)
-
 
 bug:
 click hook_1 and change the text
@@ -60,6 +49,7 @@ futures
 
 - test on
     heroku
+    dokku
     deis
 
 - editor theme selector
