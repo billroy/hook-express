@@ -45,7 +45,7 @@ function renderHookPane() {
     $('#hooks').html(markup);
 }
 
-function loadHookPane() {
+function loadHookPane(next) {
     $.ajax('/hooks', {
         success: function(data, textstatus, jqxhr) {
 
@@ -57,10 +57,12 @@ function loadHookPane() {
             });
 
             renderHookPane();
-            if (hooks.length) selectHook(null, 0);
+            if (next) next();
+            //if (hooks.length) selectHook(null, 0);
         },
         error: function(jqxhr, textstatus, errorthrown) {
             showError('Error: ' + textstatus + ' ' + errorthrown);
+            next(errorthrown);
          }
     });
 }
@@ -102,6 +104,15 @@ function selectHook(event, index) {
     if (selectedHook >= 0) {
         $(hookItemSelector(selectedHook)).addClass('selected');
         renderEditor(hooks[selectedHook]);
+    }
+}
+
+function selectHookByHookId(hookId) {
+    for (var i=0; i < hooks.length; i++) {
+        if (hooks[i].hookId == hookId) {
+            selectHook(null, i);
+            return;
+        }
     }
 }
 
@@ -162,18 +173,15 @@ function newHook() {
 }
 
 function deleteHook() {
+    if (selectedHook < 0) return showError('Select a hook to delete');
     if (!confirm('Delete this hook?')) return;
-    if (selectedHook < 0) {
-        showError('Select a hook to delete');
-        return;
-    }
     $.ajax('/hooks/' + hooks[selectedHook].hookId, {
         method: 'delete',
         success: function(data, textstatus, jqxhr) {
             showInfo('Hook deleted.');
-            loadHookPane();
-            // TODO: what should be selected?
-            selectHook(null, 0);
+            loadHookPane(function() {
+                if (hooks.length) selectHook(null, 0);
+            });
         },
         error: function(jqxhr, textstatus, errorthrown) {
             showError('Error: ' + textstatus + ' ' + errorthrown);
@@ -220,9 +228,9 @@ function saveEdit() {
         contentType: 'application/json',
         success: function(data, textstatus, jqxhr) {
             showInfo('Hook deployed.');
-            loadHookPane();
-            // TODO: what should be selected?
-            selectHook(null, 0);
+            loadHookPane(function() {
+                selectHookByHookId(data.hookId);
+            });
         },
         error: function(jqxhr, textstatus, errorthrown) {
             showError('Error: ' + textstatus + ' ' + errorthrown);
@@ -234,8 +242,6 @@ function cancelEdit() {
     if (!confirm('Discard changes?')) return;
     selectHook(null, selectedHook);
 }
-
-function showAbout() {}
 
 function showGithub() {
     window.open('https://github.com/billroy/hook-express');
@@ -315,10 +321,23 @@ $(document).ready(function() {
                 <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
                 <span>new hook</span>
             </button>
+<!--
             <button id='cmd_delete_hook' type="button" class="btn btn-danger btn-sm" aria-label="Delete">
                 <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
                 <span>delete hook</span>
             </button>
+-->
+
+            <button id='delete_menu' class='btn btn-danger btn-sm dropdown-toggle'
+                type='button' data-toggle='dropdown'>
+                <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+                delete... <span class="caret"></span>
+            </button>
+            <ul class='dropdown-menu'>
+                <li><a href='javascript: deleteHook();'>delete selected hook</a></li>
+                <li><a href='javascript: deleteAllHooks();'>delete ALL hooks</a></li>
+            </ul>
+
         </div>
         <div id='editor-header' class='col-lg-9'>
             method:&nbsp;
@@ -330,6 +349,7 @@ $(document).ready(function() {
                 <option value='delete'>delete</option>
                 <option value='options'>options</option>
                 <option value='head'>head</option>
+                <option value='connect'>connect</option>
             </select>
             &nbsp;&nbsp;path:&nbsp;
             <input id='path' type='text' value='' placeholder='/path' class='path-control'></input>
@@ -346,7 +366,6 @@ $(document).ready(function() {
                 more... <span class="caret"></span>
                 </button>
                 <ul class="dropdown-menu">
-                    <li><a href='javascript: showAbout();'>about</a></li>
                     <li><a href='javascript: showGithub();'>github</a></li>
                     <li><a href='#'><hr/></a></li>
                     <li><a href='javascript: deleteAllHooks();'>delete all</a></li>

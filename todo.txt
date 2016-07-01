@@ -1,3 +1,10 @@
+TODO hook-express
+-br
+
+- auth on api and editor
+- ssl
+
+- better function sandbox (like node-red)
 
 where delete all?
 put delete-all on a dropdown button with delete selected hook
@@ -25,12 +32,12 @@ security
         controlled context
     eventually you'll have fs privs and database privs anyway
 
+inject "request" and whitelist requirable modules
+
 bug:
 click hook_1 and change the text
 click hook_2
 the change to hook_1 is lost without warning
-
-showAbout
 
 clear editor on delete?
     select what on delete?
@@ -39,6 +46,8 @@ delete all should empty the path control
 
 after saving an item the cursor should end up on that item
     there should be less flash in the hook list
+
+method to lock/disable admin api until next restart
 
 bug: new hook (no hookId) on existing path/method pair
     new hook
