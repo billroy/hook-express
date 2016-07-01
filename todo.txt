@@ -6,10 +6,6 @@ TODO hook-express
 
 - better function sandbox (like node-red)
 
-where delete all?
-put delete-all on a dropdown button with delete selected hook
-delete ALL HOOKS
-
 auth
     separate admin+api auth from hooks and static served files
 
@@ -22,6 +18,9 @@ auth
 
 SSL support
     and make it easy
+
+bug: hook exceptions return too much to client
+    throw new Error('Baloney!');
 
 get-all-hooks should return an array, not an object
     remove conversion-to-object in client
@@ -39,22 +38,19 @@ click hook_1 and change the text
 click hook_2
 the change to hook_1 is lost without warning
 
-clear editor on delete?
-    select what on delete?
+clear editor on delete? (of last hook)
 
 delete all should empty the path control
 
-after saving an item the cursor should end up on that item
-    there should be less flash in the hook list
-
 method to lock/disable admin api until next restart
 
-bug: new hook (no hookId) on existing path/method pair
+bug(?): new hook (no hookId) on existing path/method pair
     new hook
     set path to an existing hook
     save
     should message or replace existing hook
     instead, creates unhittable route
+    error message for this case?
 
 ---
 futures
