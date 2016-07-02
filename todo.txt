@@ -3,6 +3,11 @@ TODO hook-express
 
 accordion?
 
+log request IP in metadata
+hide/blacklist req.headers.authorization
+why isn't console log colorized?
+log: argv.loglevel
+
 enable easy embedding in other express apps (like cloudcmd)
 
 separate user auth for hooks and static-served files
