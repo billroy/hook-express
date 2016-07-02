@@ -1,14 +1,24 @@
 TODO hook-express
 -br
 
-accordion?
+---
+logging
 
-log request IP in metadata
+log request IP
 hide/blacklist req.headers.authorization
 why isn't console log colorized?
-log: argv.loglevel
+
+---
+API and internals
+
+load hook set from url
 
 post /hooks should handle array of hooks
+    TODO: move it to saveHook
+    TODO: make a hook manager
+
+    method to lock/disable admin api until next restart
+        POST /hx/lock {"confirm": "lock"}
 
 enable easy embedding in other express apps (like cloudcmd)
 
@@ -18,6 +28,10 @@ hook to add/delete/list user to apiUsers
 
 get rid of server::hooks structure?
     - use routing tables directly
+
+---
+
+Security
 
 bug: hook exceptions return too much to client
     throw new Error('Baloney!');
@@ -31,11 +45,20 @@ better function sandbox (like node-red)
 
     inject "request" and whitelist requirable modules?
 
+bcrypt the passwords
+passport integration for authentication
+letsencrypt integration
+
+
+---
+UI
+
+editor: can't type in find input
+    press control+F
+    see find window
+    can't click in it to type
 
 clear editor on delete? (of last hook)
-
-method to lock/disable admin api until next restart
-    /hx/lock {"confirm": true}
 
 bug:
     click hook_1 and change the text
@@ -50,62 +73,59 @@ bug(?): new hook (no hookId) on existing path/method pair
     instead, creates unhittable route
     error message for this case?
 
-passport integration for authentication
+accordion for hooks/editor?
+
+---
+Live update features
 
 socket.io integration
+    live hit counts on the edit screen via socket.io
     per-request log update -> client
         live hit counts in the hook window
         live log viewer
 
+global log view for server
 detailed log view per hook
     winston provides by-date
     winston is slow
     loki?
 
+---
+Hygiene
+
 move the protected api to /hx/hooks?
-    /hookex/hooks
-    /hookex/logs
-    /hookex/lock
-    /hookex/users
-    where the editor?  /hookex/editor? /editor?
+    /hx/hooks
+    /hx/logs
+    /hx/lock
+    /hx/users
+    where the editor?  /hx/editor? /editor?
 
-bcrypt the passwords
-
-docker container recipe
-
-consider integrating for /public file manager:
-    https://www.npmjs.com/package/cloudcmd
+docker container recipe & test
 
 
 ---
 futures
+
+consider integrating for /public file manager:
+https://www.npmjs.com/package/cloudcmd
 
 - test on
     heroku
     dokku
     deis
 
--limited-duration hooks
+-limited-duration hooks for demo mode
     self-destruct in x minutes
 
 - clone: var new = Object.assign({}, old);
 
 - editor theme selector
 
-- host indicator
-- host status
-    - requests
-    - live?
+- host indicator (location.origin)
 
 - versioned hooks
 
-
-- live hit counts on the edit screen via socket.io
-
-- set host
-    field to set/change host for the client
-
-- disable hook but leave it defined
+- way to disable hook but leave it defined
 
 - libraries of hooks
     - mysql

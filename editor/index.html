@@ -120,7 +120,7 @@ function runSelectedHook() {
 
     $.ajax(hook.path, {
         success: function(data, textstatus, jqxhr) {
-            showInfo('Hook response: ' + data);
+            showInfo(hook.method + ' ' + hook.path + ' returned: ' + data);
         },
         error: function(jqxhr, textstatus, errorthrown) {
             showError('Error: ' + textstatus + ' ' + errorthrown);

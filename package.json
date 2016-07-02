@@ -4,7 +4,7 @@
   "description": "A web hook host and studio for ExpressJS.",
   "main": "hook-express.js",
   "scripts": {
-    "start": "HOOK_EXPRESS_API_USERNAME=hook HOOK_EXPRESS_API_PASSWORD=express node hook-express.js",
+    "start": "HOOK_EXPRESS_API_USERNAME=hook HOOK_EXPRESS_API_PASSWORD=express node hook-express.js --load=startup-hooks.json",
     "test": "test/test-hooks.sh"
   },
   "author": "bill@bitlash.net",
@@ -19,7 +19,7 @@
     "express": "^4.14.0",
     "express-winston": "^1.4.1",
     "helmet": "^2.1.1",
-    "morgan": "^1.7.0",
+    "request": "^2.72.0",
     "require-from-string": "^1.2.0",
     "spdy": "^3.3.3",
     "winston": "^2.2.0",

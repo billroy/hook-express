@@ -1,7 +1,7 @@
 
 body {
     font-family: Sans-Serif;
-    background-color: gray;
+    background-color: darkgray;
 }
 
 .header {
@@ -17,10 +17,10 @@ body {
     color: white;
 }
 
-.commands {
+#commands {
     padding-top: 8px;
     height: 48px;
-    background-color: darkgray;
+    background-color: lightgray;
 }
 
 .path-control {

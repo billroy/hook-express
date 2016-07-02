@@ -9,7 +9,7 @@ function env(key, default_value) {
 
 // parse command line arguments
 var argv = require('yargs')
-    .usage('Usage: $0 --port=[3000] --ssl --certs=[~/.certs] --logfile=[]')
+    .usage('Usage: $0 --port=[3000] --ssl --certs=[~/.certs] --load=[file|url] --logfile=[]')
     .default('port', env('PORT', 3000))
     .default('ssl', env('SSL', false))
     .default('load', env('LOAD_HOOKS', ''))
@@ -21,8 +21,9 @@ var argv = require('yargs')
 console.log('hook-express here! v0.1');
 console.log(argv);
 
-var require_from_string = require('require-from-string');
 var fs = require('fs');
+var request = require('request');
+var require_from_string = require('require-from-string');
 
 // initialize the express app
 var express = require('express');
@@ -65,7 +66,9 @@ if (argv.logfile) winston.add(winston.transports.File, {
 var expressWinston = require('express-winston');
 expressWinston.requestWhitelist.push('body');
 expressWinston.responseWhitelist.push('body');
-app.use(expressWinston.logger({winstonInstance: winston}));
+app.use(expressWinston.logger({
+    winstonInstance: winston
+}));
 
 
 // HTTP basic auth for express 4.0
@@ -313,15 +316,38 @@ app.use('/editor', authenticate, express.static(__dirname + '/editor'));
 app.use('/', express.static(__dirname + '/public'));
 
 // load startup hooks
-if (argv.load) {
-    var startupHooks = JSON.parse(fs.readFileSync(argv.load).toString());
-    console.log('Loading startup hooks...');
+function loadHooksFromFile(filepath) {
+    console.log('Loading hooks from file:', filepath);
+    var startupHooks = JSON.parse(fs.readFileSync(filepath).toString());
     startupHooks.forEach(function(hook, index) {
         console.log('loading hook:', hook);
         saveHook(hook, function(err, hook) {
             if (err) console.log('Load error:', hook, err);
         });
     });
+}
+
+function loadHooksFromUrl(url) {
+    console.log('Loading hooks from url:', url);
+    request.get(url, function(err, response, body) {
+        if (err) console.log('Error loading url:', hook, err);
+        var hooks = JSON.parse(body);
+        console.log('LOADED:', typeof hooks, hooks);
+        console.log('loaded hook count:', hooks.length);
+        hooks.forEach(function(hook, index) {
+            console.log('loading hook:', hook);
+            saveHook(hook, function(err, hook) {
+                if (err) console.log('Load error:', hook, err);
+            });
+        });
+    });
+}
+
+if (argv.load) {
+    if (argv.load.startsWith('http://') || argv.load.startsWith('https://')) {
+        loadHooksFromUrl(argv.load);
+    }
+    else loadHooksFromFile(argv.load);
 }
 
 // configure SSL
