@@ -203,54 +203,6 @@ app.post('/hooks', authenticate, function(req, res) {
     });
 });
 
-/***
-    var hook = {};
-
-    // validate method
-    var method = req.body.method || 'get';
-    if (http.METHODS.indexOf(method.toUpperCase()) < 0) return res.status(400).send('unsupported http method');
-    if (!(method.toLowerCase() in app)) return res.status(400).send('unsupported app method');
-    hook.method = method;
-
-    // validate path
-    if (!req.body.path) return res.status(400).send('path parameter not specified');
-    hook.path = req.body.path;
-
-    // validate hook
-    if (!req.body.hook) return res.status(400).send('hook parameter not specified');
-    hook.hook = req.body.hook;
-
-    // transfer hookId if specified
-    if (req.body.hookId) hook.hookId = req.body.hookId;
-
-    // existing hook: if a route matching the hookId, method, and path exists,
-    // replace its hook function
-    var route = findHook(hook);
-    if (route) {
-        try {
-            // monkey-patch route.handle with hook function by same name
-            route.handle = require_from_string(hookFunctionText(hook));
-            hooks[hook.hookId] = hook;
-            return res.send(hook);
-        } catch(err) {
-            console.log('Error updating hook:', err);
-            return res.status(500).send(err);
-        }
-    }
-
-    // matching hook does not exist; insert a new one
-    try {
-        hook.hookId = 'hook_' + nextHookId++;   // assign new hookId
-        app[method.toLowerCase()](req.body.path, require_from_string(hookFunctionText(hook)));
-        hooks[hook.hookId] = hook;
-        res.send(hook);
-    } catch(err) {
-        console.log('Error creating hook:', err);
-        res.status(500).send(err);
-    }
-});
-*/
-
 app.get('/hooks', authenticate, function(req, res) {
     // convert the hooks object to an array
     var output = [];
