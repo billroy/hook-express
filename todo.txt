@@ -1,9 +1,9 @@
 TODO hook-express
 -br
 
-separate user auth for hooks and static-served files
+accordion?
 
-argument validation: typeof x == string
+separate user auth for hooks and static-served files
 
 hook to add user to apiUsers
 

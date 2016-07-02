@@ -1,0 +1,44 @@
+[
+  {
+    "method": "get",
+    "path": "/random",
+    "hook": "res.send(\"\"+Math.random());",
+    "hookId": "hook_1"
+  },
+  {
+    "method": "post",
+    "path": "/echo",
+    "hook": "res.send(req.body);",
+    "hookId": "hook_2"
+  },
+  {
+    "method": "get",
+    "path": "/count",
+    "hook": "res.send(\"\"+res.locals.context.requestCount);",
+    "hookId": "hook_3"
+  },
+  {
+    "method": "get",
+    "path": "/time",
+    "hook": "res.send(new Date());",
+    "hookId": "hook_4"
+  },
+  {
+    "method": "post",
+    "path": "/kvs/:key",
+    "hook": "// key-value store: save a value associated with a key\nif (!res.locals.context.kvs) res.locals.context.kvs = {};\nres.locals.context.kvs[req.params.key] = req.body;\nres.send(\"saved\");\n",
+    "hookId": "hook_5"
+  },
+  {
+    "method": "get",
+    "path": "/kvs/:key",
+    "hook": "// key-value store: fetch the value associated with a key\nvar key = req.params.key;\nvar store = res.locals.context.kvs;\nif (key in store) res.send(store[key]);\nelse res.status(404).send('not found');",
+    "hookId": "hook_6"
+  },
+  {
+    "method": "delete",
+    "path": "/kvs/:key",
+    "hook": "// key-value store: delete the value at a key\ndelete res.locals.context.kvs[req.params.key];\nres.send('deleted');",
+    "hookId": "hook_7"
+  }
+]

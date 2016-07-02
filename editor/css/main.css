@@ -20,7 +20,7 @@ body {
 }
 
 .path-control {
-    width: 250px;
+    width: 350px;
 }
 
 .footer {
@@ -31,7 +31,11 @@ body {
     height: 100%;
     overflow-x: hidden;
     overflow-y: scroll;
-    background-color: lightgray;
+    /* background-color: lightgray; */
+    background-color: #002240;
+    color: white;
+    font-family: "Source Code Pro";
+    font-size: 16px;
     border: 1px solid gray;
     white-space: nowrap;
 }
@@ -41,7 +45,7 @@ body {
     display: inline-block;
     padding-left: 0.5em;
     padding-top: 0.1em;
-    padding-bottom: 0.1em;
+    padding-bottom: 0.2em;
 }
 
 .right-pane-container {
