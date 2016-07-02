@@ -11,23 +11,25 @@ why isn't console log colorized?
 ---
 API and internals
 
-load hook set from url
+/hx/load load hook set from url
 
 post /hooks should handle array of hooks
     TODO: move it to saveHook
     TODO: make a hook manager
 
-    method to lock/disable admin api until next restart
+method to lock/disable admin api until next restart
         POST /hx/lock {"confirm": "lock"}
 
 enable easy embedding in other express apps (like cloudcmd)
 
 optional additional user auth table for hooks and static-served files from /public
-
-hook to add/delete/list user to apiUsers
+    /hx/users
+    hook to add/delete/list user to apiUsers
 
 get rid of server::hooks structure?
     - use routing tables directly
+    how to identify hooks for replacement?
+        name is working pretty well...
 
 ---
 
@@ -105,6 +107,10 @@ docker container recipe & test
 
 ---
 futures
+
+add a way to add a middleware function to a route instead of a bound dispatch function
+
+add better-fidelity inspection of app._routes
 
 consider integrating for /public file manager:
 https://www.npmjs.com/package/cloudcmd

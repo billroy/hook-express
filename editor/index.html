@@ -200,7 +200,8 @@ function deleteHook() {
         success: function(data, textstatus, jqxhr) {
             showInfo('Hook deleted.');
             loadHookPane(function() {
-                if (hooks.length) selectHook(null, 0);
+                if (selectedHook > hooks.length-1) selectedHook--;
+                if (hooks.length) selectHook(null, selectedHook);
                 else {
                     $('#path').val('');
                     $('#method').val('');
