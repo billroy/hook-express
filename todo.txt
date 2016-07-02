@@ -8,11 +8,13 @@ hide/blacklist req.headers.authorization
 why isn't console log colorized?
 log: argv.loglevel
 
+post /hooks should handle array of hooks
+
 enable easy embedding in other express apps (like cloudcmd)
 
-separate user auth for hooks and static-served files
+optional additional user auth table for hooks and static-served files from /public
 
-hook to add user to apiUsers
+hook to add/delete/list user to apiUsers
 
 get rid of server::hooks structure?
     - use routing tables directly
@@ -27,17 +29,18 @@ better function sandbox (like node-red)
         controlled context
     eventually you'll have fs privs and database privs anyway
 
-inject "request" and whitelist requirable modules
+    inject "request" and whitelist requirable modules?
+
+
+clear editor on delete? (of last hook)
+
+method to lock/disable admin api until next restart
+    /hx/lock {"confirm": true}
 
 bug:
     click hook_1 and change the text
     click hook_2
     the change to hook_1 is lost without warning
-
-clear editor on delete? (of last hook)
-
-method to lock/disable admin api until next restart
-    /hx/lock {"confirm": true, username:, password:}
 
 bug(?): new hook (no hookId) on existing path/method pair
     new hook
@@ -50,8 +53,14 @@ bug(?): new hook (no hookId) on existing path/method pair
 passport integration for authentication
 
 socket.io integration
+    per-request log update -> client
+        live hit counts in the hook window
+        live log viewer
 
-per-request log interrogation
+detailed log view per hook
+    winston provides by-date
+    winston is slow
+    loki?
 
 move the protected api to /hx/hooks?
     /hookex/hooks
@@ -67,11 +76,6 @@ docker container recipe
 consider integrating for /public file manager:
     https://www.npmjs.com/package/cloudcmd
 
-limited-duration hooks
-    self-destruct in x minutes
-
-clone
-    var new = Object.assign({}, old);
 
 ---
 futures
@@ -81,7 +85,13 @@ futures
     dokku
     deis
 
+-limited-duration hooks
+    self-destruct in x minutes
+
+- clone: var new = Object.assign({}, old);
+
 - editor theme selector
+
 - host indicator
 - host status
     - requests
@@ -89,10 +99,6 @@ futures
 
 - versioned hooks
 
-- download hooks
-    - as uploadable http commands
-
-- detailed log view per hook
 
 - live hit counts on the edit screen via socket.io
 

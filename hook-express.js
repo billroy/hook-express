@@ -197,10 +197,28 @@ function saveHook(inputHook, next) {
 }
 
 app.post('/hooks', authenticate, function(req, res) {
-    saveHook(req.body, function(err, hook) {
-        if (err) return res.status(400).send(err);
-        res.send(hook);
-    });
+    if (Array.isArray(req.body)) {
+        outputHooks = [];
+        async.eachSeries(req.body,
+            function(hook, next) {
+                saveHook(hook, function(err, hook) {
+                    if (err) return next(err);
+                    outputHooks.push(hook);
+                    next(null, hook);
+                });
+            },
+            function(err) {
+                if (err) return res.status(400).send(err);
+                res.send(outputHooks);
+            }
+        );
+    }
+    else {
+        saveHook(req.body, function(err, hook) {
+            if (err) return res.status(400).send(err);
+            res.send(hook);
+        });
+    }
 });
 
 app.get('/hooks', authenticate, function(req, res) {
