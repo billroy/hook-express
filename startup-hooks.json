@@ -2,7 +2,7 @@
   {
     "method": "get",
     "path": "/random",
-    "hook": "res.send(\"\"+Math.random());",
+    "hook": "res.send(Math.random().toString());",
     "hookId": "hook_1"
   },
   {
@@ -14,7 +14,7 @@
   {
     "method": "get",
     "path": "/count",
-    "hook": "res.send(\"\"+res.locals.context.requestCount);",
+    "hook": "res.send(res.locals.context.requestCount.toString());",
     "hookId": "hook_3"
   },
   {

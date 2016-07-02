@@ -9,11 +9,12 @@ function env(key, default_value) {
 
 // parse command line arguments
 var argv = require('yargs')
-    .usage('Usage: $0 --port=[3000] --ssl --certs=[~/.certs]')
+    .usage('Usage: $0 --port=[3000] --ssl --certs=[~/.certs] --logfile=[]')
     .default('port', env('PORT', 3000))
     .default('ssl', env('SSL', false))
     .default('load', env('LOAD_HOOKS', ''))
     .default('certs', env('SSL_CERTS', '~/.certs'))
+    .default('logfile', env('LOGFILE', undefined))
     .argv;
 
 console.log('hook-express here! v0.1');
@@ -36,15 +37,26 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
 
 // configure logging
-//var logger = require('morgan');
-//app.use(logger('common'));
 var winston = require('winston');
-var expressWinston = require('express-winston');
 
-expressWinston.requestWhitelist.push('body');
-expressWinston.responseWhitelist.push('body');
+winston.remove(winston.transports.Console);
+winston.add(winston.transports.Console, {
+    json: true,
+    colorize: true,
+    silent: false,
+    prettyPrint: true,
+    timestamp: true
+});
 
-app.use(expressWinston.logger({
+if (argv.logfile) winston.add(winston.transports.File, {
+    filename: process.env.HOME + '/.hook-express.log',
+    timestamp: true,
+    json: true,
+    prettyPrint: false
+});
+
+/*
+var logger = new winston.Logger({
     transports: [
         new winston.transports.Console({
             json: true,
@@ -52,13 +64,45 @@ app.use(expressWinston.logger({
             silent: false,
             prettyPrint: true,
             timestamp: true
+        }),
+        // TODO: make this optional on argv.logfile
+        new winston.transports.File({
+            filename: process.env.HOME + '/.hook-express.log',
+            timestamp: true,
+            json: true,
+            prettyPrint: false
+        })
+    ]
+});
+*/
+var expressWinston = require('express-winston');
+expressWinston.requestWhitelist.push('body');
+expressWinston.responseWhitelist.push('body');
+
+app.use(expressWinston.logger({
+    winstonInstance: winston
+/*
+    transports: [
+        new winston.transports.Console({
+            json: true,
+            colorize: true,
+            silent: false,
+            prettyPrint: true,
+            timestamp: true
+        }),
+        new winston.transports.File({
+            filename: process.env.HOME + '/.hook-express.log',
+            timestamp: true,
+            json: true,
+            prettyPrint: false
         })
     ],
-    meta: true, // optional: control whether you want to log the meta data about the request (default to true)
-    msg: "HTTP {{req.method}} {{req.url}}", // optional: customize the default logging message. E.g. "{{res.statusCode}} {{req.method}} {{res.responseTime}}ms {{req.url}}"
-    expressFormat: true, // Use the default Express/morgan request formatting, with the same colors. Enabling this will override any msg and colorStatus if true. Will only output colors on transports with colorize set to true
-    colorStatus: true, // Color the status code, using the Express/morgan color palette (default green, 3XX cyan, 4XX yellow, 5XX red). Will not be recognized if expressFormat is true
-    ignoreRoute: function (req, res) { return false; } // optional: allows to skip some log messages based on request and/or response
+*/
+    //meta: true, // optional: control whether you want to log the meta data about the request (default to true)
+    //msg: "HTTP {{req.method}} {{req.url}}", // optional: customize the default logging message. E.g. "{{res.statusCode}} {{req.method}} {{res.responseTime}}ms {{req.url}}"
+    //expressFormat: true, // Use the default Express/morgan request formatting, with the same colors. Enabling this will override any msg and colorStatus if true. Will only output colors on transports with colorize set to true
+    //colorStatus: true, // Color the status code, using the Express/morgan color palette (default green, 3XX cyan, 4XX yellow, 5XX red). Will not be recognized if expressFormat is true
+    //ignoreRoute: function (req, res) { return false; } // optional: allows to skip some log messages based on request and/or response
 }));
 
 
@@ -287,8 +331,30 @@ app.delete('/hooks/:hookId', authenticate, function(req, res) {
     }
 });
 
-// TODO: remove
-app.get('/routelist', authenticate, function(req, res) {
+
+// TODO: experimental; remove
+if (argv.logfile) app.get('/hx/logs', authenticate, function(req, res) {
+    //
+    // Find items logged between today and yesterday.
+    //
+    var options = {
+        from: 0,    //new Date() - 24 * 60 * 60 * 1000,
+        until: new Date(),
+        limit: 100,
+        start: 0,
+        order: 'asc',
+        fields: ['req', 'res']
+    };
+
+    winston.query({}, function (err, results) {
+        if (err) return res.status(500).send(err);
+        res.send(results);
+    });
+});
+
+
+// TODO: experimental; remove
+app.get('/hx/routelist', authenticate, function(req, res) {
     console.log('_router:', app._router);
     var output = [];
     app._router.stack.forEach(function(route) {

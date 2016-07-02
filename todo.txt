@@ -3,6 +3,8 @@ TODO hook-express
 
 accordion?
 
+enable easy embedding in other express apps (like cloudcmd)
+
 separate user auth for hooks and static-served files
 
 hook to add user to apiUsers
@@ -41,6 +43,8 @@ bug(?): new hook (no hookId) on existing path/method pair
     error message for this case?
 
 passport integration for authentication
+
+socket.io integration
 
 per-request log interrogation
 
