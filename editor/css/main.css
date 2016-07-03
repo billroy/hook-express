@@ -17,6 +17,12 @@ body {
     color: white;
 }
 
+#header-right, #header-right a {
+    padding-top: 9px;
+    font-size: 16pt;
+    color: lightgreen;
+}
+
 #commands {
     padding-top: 8px;
     height: 48px;

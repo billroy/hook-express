@@ -341,6 +341,13 @@ $(document).ready(function() {
     $('#method').on('change', showSaveCancel);
     $('#path').on('input', showSaveCancel);
     hideSaveCancel();
+
+    $('#header-right').html([
+        '<a href="', location.origin, '" target="_blank">',
+            '<span class="glyphicon glyphicon-cloud" aria-hidden="true"></span>',
+            '&nbsp;', location.origin,
+        '</a>'
+    ].join(''));
 });
 
 </script>
@@ -361,7 +368,7 @@ $(document).ready(function() {
     <div class='row'>
         <div id='header' class='col-lg-12 header'>
             <span style='float:left'><a href='https://github.com/billroy/hook-express' target = '_blank'>&bull;&nbsp;hook-express</a></span>
-            <span style='float:right'></span>
+            <span id='header-right' style='float:right'></span>
         </div>
     </div>
     <div class='row' id='commands' class='commands'>

@@ -40,5 +40,17 @@
     "path": "/kvs/:key",
     "hook": "// key-value store: delete the value at a key\ndelete res.locals.context.kvs[req.params.key];\nres.send('deleted');",
     "hookId": "hook_7"
+  },
+  {
+    "method": "get",
+    "path": "/daemon/:interval",
+    "hook": "if (!res.locals.context.daemonInterval) {\n    res.locals.context.daemonCount = 0;\n    res.locals.context.daemonInterval = setInterval(\n        function() {\n            console.log('daemon here at ', new Date(), res.locals.context.daemonCount++);\n        },\n        req.params.interval || 10000\n    );\n}\nres.send(\"started...\");",
+    "hookId": "hook_10"
+  },
+  {
+    "method": "delete",
+    "path": "/daemon/",
+    "hook": "if (res.locals.context.daemonInterval) {\n    clearInterval(res.locals.context.daemonInterval);\n    res.locals.context.daemonInterval = undefined;\n}\nres.send(\"stopped.\");",
+    "hookId": "hook_11"
   }
 ]

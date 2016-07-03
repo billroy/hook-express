@@ -120,14 +120,14 @@ https://www.npmjs.com/package/cloudcmd
     dokku
     deis
 
+- way to instrument a catch-all route
+
 -limited-duration hooks for demo mode
     self-destruct in x minutes
 
 - clone: var new = Object.assign({}, old);
 
 - editor theme selector
-
-- host indicator (location.origin)
 
 - versioned hooks
 
