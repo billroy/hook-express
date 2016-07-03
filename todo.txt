@@ -4,18 +4,14 @@ TODO hook-express
 ---
 logging
 
-log request IP
 hide/blacklist req.headers.authorization
 why isn't console log colorized?
 
 ---
 API and internals
 
-/hx/load load hook set from url
-
-post /hooks should handle array of hooks
-    TODO: move it to saveHook
-    TODO: make a hook manager
+saveHook should handle array of hooks
+TODO: make a hook manager
 
 method to lock/disable admin api until next restart
         POST /hx/lock {"confirm": "lock"}

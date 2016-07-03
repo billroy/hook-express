@@ -112,15 +112,26 @@ function selectHookByHookId(hookId) {
 }
 
 function runSelectedHook() {
-    if ((selectedHook < 0) || (hooks[selectedHook].method != 'get') ||
-            (hooks[selectedHook].path.search(':') >= 0)) {
-        return showError('Select a no-args GET hook to run');
+    if ((selectedHook < 0) || (hooks[selectedHook].method != 'get')) {
+        return showError('Select a GET hook to run');
     }
     var hook = hooks[selectedHook];
 
-    $.ajax(hook.path, {
+    // get parameter values
+    var pathParts = hook.path.split('/');
+    for (var i=0; i < pathParts.length; i++) {
+        if (pathParts[i].startsWith(':')) {
+            var result = prompt('Enter value for ' + pathParts[i], '');
+            if (result == null) return;
+            else pathParts[i] = result;
+        }
+    }
+    var url = pathParts.join('/');
+    console.log('runSelected:', hook.path, url);
+
+    $.ajax(url, {
         success: function(data, textstatus, jqxhr) {
-            showInfo(hook.method + ' ' + hook.path + ' returned: ' + data);
+            showInfo(hook.method + ' ' + url + ' returned: ' + data);
         },
         error: function(jqxhr, textstatus, errorthrown) {
             showError('Error: ' + textstatus + ' ' + errorthrown);
