@@ -9,18 +9,19 @@ function env(key, default_value) {
 
 // parse command line arguments
 var argv = require('yargs')
-    .usage('Usage: $0 --port=[3000] --ssl --certs=[~/.certs] --load=[file|url] --logfile=[]')
+    .usage('Usage: $0 --port=[3000] --ssl --ssl_certs=[~/.certs] --load=[file|url] --logfile=[] --loglevel=[info]')
     .default('port', env('PORT', 3000))
     .default('ssl', env('SSL', false))
-    .default('load', env('LOAD_HOOKS', ''))
-    .default('certs', env('SSL_CERTS', '~/.certs'))
+    .default('load', env('LOAD', ''))
+    .default('certs', env('CERTS', '~/.certs'))
     .default('logfile', env('LOGFILE', undefined))
     .default('loglevel', env('LOGLEVEL', 'info'))
     .argv;
 
-console.log('hook-express here! v0.1');
+console.log('hook-express here! v0.2');
 console.log(argv);
 
+var async = require('async');
 var fs = require('fs');
 var request = require('request');
 var require_from_string = require('require-from-string');
@@ -29,7 +30,9 @@ var require_from_string = require('require-from-string');
 var express = require('express');
 var app = express();
 var helmet = require('helmet');
-app.use(helmet());
+app.use(helmet());              // engage security protections
+app.enable('trust proxy');      // configure to support x-forwarded-for header for req.ip
+
 var http = require('http');
 var https = require('spdy');
 
@@ -65,6 +68,10 @@ if (argv.logfile) winston.add(winston.transports.File, {
 // awkward but required so we have a winston handle for the winston.query handler below
 var expressWinston = require('express-winston');
 expressWinston.requestWhitelist.push('body');
+expressWinston.requestWhitelist.push('ip');
+expressWinston.requestWhitelist.push('ips');
+expressWinston.requestWhitelist.push('params');
+expressWinston.requestWhitelist.push('path');
 expressWinston.responseWhitelist.push('body');
 app.use(expressWinston.logger({
     winstonInstance: winston
