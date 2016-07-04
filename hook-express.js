@@ -9,13 +9,14 @@ function env(key, default_value) {
 
 // parse command line arguments
 var argv = require('yargs')
-    .usage('Usage: $0 --port=[3000] --ssl --ssl_certs=[~/.certs] --load=[file|url] --logfile=[] --loglevel=[info]')
+    .usage('Usage: $0 --port=[3000] --ssl --ssl_certs=[~/.certs] --load=[file|url] --logfile=[] --loglevel=[info] --capture')
     .default('port', env('PORT', 3000))
     .default('ssl', env('SSL', false))
     .default('load', env('LOAD', ''))
     .default('certs', env('CERTS', '~/.certs'))
     .default('logfile', env('LOGFILE', undefined))
     .default('loglevel', env('LOGLEVEL', 'info'))
+    .default('capture', env('CAPTURE', false))
     .argv;
 
 console.log('hook-express here! v0.2');
@@ -25,6 +26,7 @@ var async = require('async');
 var fs = require('fs');
 var request = require('request');
 var require_from_string = require('require-from-string');
+var util = require('util');
 
 // initialize the express app
 var express = require('express');
@@ -46,6 +48,28 @@ var winston = require('winston');
 
 // awkward but required: must remove/add Console to change options
 winston.remove(winston.transports.Console);
+
+// create a custom logger
+var CustomLogger = winston.transports.CustomLogger = function (options) {
+    this.name = 'customLogger';
+    this.level = options.level || 'info';
+};
+util.inherits(CustomLogger, winston.Transport);
+CustomLogger.prototype.log = function (level, msg, meta, callback) {
+    // optionally capture 404s as new hooks
+    if (argv.capture && (meta.res.statusCode == 404)) {
+        //console.log('creating hook for', meta.req.path);
+        saveHook({
+            path: meta.req.path,
+            method: meta.req.method.toLowerCase(),
+            hook: 'res.send("");'
+        }, function(err, hook) {
+            callback(null, true);
+        });
+    }
+};
+winston.add(winston.transports.CustomLogger, {});
+
 winston.add(winston.transports.Console, {
     level: argv.loglevel,
     json: true,
@@ -322,6 +346,7 @@ app.use('/editor', authenticate, express.static(__dirname + '/editor'));
 // serve the static content to anyone
 app.use('/', express.static(__dirname + '/public'));
 
+
 // load startup hooks
 function loadHooksFromFile(filepath) {
     console.log('Loading hooks from file:', filepath);
@@ -350,13 +375,6 @@ function loadHooksFromUrl(url) {
     });
 }
 
-if (argv.load) {
-    if (argv.load.startsWith('http://') || argv.load.startsWith('https://')) {
-        loadHooksFromUrl(argv.load);
-    }
-    else loadHooksFromFile(argv.load);
-}
-
 // configure SSL
 var server;
 if (argv.ssl) {
@@ -373,4 +391,11 @@ else {
 
 var listener = server.listen(argv.port, function() {
     console.log('Server is listening at:', listener.address());
+
+    if (argv.load) {
+        if (argv.load.startsWith('http://') || argv.load.startsWith('https://')) {
+            loadHooksFromUrl(argv.load);
+        }
+        else loadHooksFromFile(argv.load);
+    }
 });
