@@ -104,6 +104,13 @@ docker container recipe & test
 ---
 futures
 
+means to create a route if it doesn't exist
+    have to detect "no route" case - not just "404 being returned" case
+
+database driven routing
+
+glitch-free route replacement
+
 add a way to add a middleware function to a route instead of a bound dispatch function
 
 add better-fidelity inspection of app._routes

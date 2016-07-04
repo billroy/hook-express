@@ -127,10 +127,10 @@ function runSelectedHook() {
         }
     }
     var url = pathParts.join('/');
-    console.log('runSelected:', hook.path, url);
 
     $.ajax(url, {
         success: function(data, textstatus, jqxhr) {
+            console.log('runSelected:', url, 'returned', data);
             showInfo(hook.method + ' ' + url + ' returned: ' + data);
         },
         error: function(jqxhr, textstatus, errorthrown) {
@@ -353,12 +353,16 @@ $(document).ready(function() {
     $('#path').on('input', showSaveCancel);
     hideSaveCancel();
 
+/*
     $('#header-right').html([
         '<a href="', location.origin, '" target="_blank">',
             '<span class="glyphicon glyphicon-cloud" aria-hidden="true"></span>',
             '&nbsp;', location.origin,
         '</a>'
     ].join(''));
+*/
+    var hostColor = location.origin.startsWith('http://') ? 'red' : 'green';
+    $('#origin').text(location.origin).css('color', hostColor);
 });
 
 </script>
@@ -379,6 +383,7 @@ $(document).ready(function() {
     <div class='row'>
         <div id='header' class='col-lg-12 header'>
             <span style='float:left'><a href='https://github.com/billroy/hook-express' target = '_blank'>&bull;&nbsp;hook-express</a></span>
+            &nbsp;@&nbsp;<span id='origin'></span>
             <span id='header-right' style='float:right'></span>
         </div>
     </div>
