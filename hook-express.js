@@ -9,8 +9,9 @@ function env(key, default_value) {
 
 // parse command line arguments
 var argv = require('yargs')
-    .usage('Usage: $0 --port=[3000] --ssl --ssl_certs=[~/.certs] --load=[file|url] --logfile=[] --loglevel=[info] --capture')
+    .usage('Usage: $0 --port=[3000] --api_base=[/hx] --ssl --ssl_certs=[~/.certs] --load=[file|url] --logfile=[] --loglevel=[info] --capture')
     .default('port', env('PORT', 3000))
+    .default('api_base', env('API_BASE', '/hx'))
     .default('ssl', env('SSL', false))
     .default('load', env('LOAD', ''))
     .default('certs', env('CERTS', '~/.certs'))
@@ -30,6 +31,7 @@ var util = require('util');
 // initialize the express app
 var express = require('express');
 var app = express();
+var router = express.Router();  // router instance for /hx routes
 var helmet = require('helmet');
 app.use(helmet());              // engage security protections
 app.enable('trust proxy');      // configure to support x-forwarded-for header for req.ip
@@ -60,7 +62,14 @@ var CustomLogger = winston.transports.CustomLogger = function (options) {
 util.inherits(CustomLogger, winston.Transport);
 CustomLogger.prototype.log = function (level, msg, meta, callback) {
     // optionally capture 404s as new hooks
-    if (argv.capture && (meta.res.statusCode == 404)) {
+
+    if (argv.debug) {
+        console.log('CUSTOM LEVEL:', level);
+        console.log('CUSTOM MSG:', msg);
+        console.log('CUSTOM META:', meta);
+    }
+
+    if (argv.capture && meta && meta.res && meta.res.statusCode && (meta.res.statusCode == 404)) {
         //console.log('creating hook for', meta.req.path);
         hookBoss.save({
             path: meta.req.path,
@@ -155,7 +164,7 @@ app.use(function(req, res, next) {
     next();
 });
 
-app.post('/hooks', authenticate, function(req, res) {
+router.post('/hooks', authenticate, function(req, res) {
     if (Array.isArray(req.body)) {
         outputHooks = [];
         async.eachSeries(req.body,
@@ -180,17 +189,17 @@ app.post('/hooks', authenticate, function(req, res) {
     }
 });
 
-app.get('/hooks', authenticate, function(req, res) {
+router.get('/hooks', authenticate, function(req, res) {
     res.send(hookBoss.get());
 });
 
-app.get('/hooks/:hookId', authenticate, function(req, res) {
+router.get('/hooks/:hookId', authenticate, function(req, res) {
     var hook = hookBoss.get(req.params.hookId || '');
     if (hook) res.send(hook);
     else res.status(404).send('not found');
 });
 
-app.delete('/hooks/:hookId', authenticate, function(req, res) {
+router.delete('/hooks/:hookId', authenticate, function(req, res) {
     if (req.params.hookId == '*') {
         hookBoss.get().forEach(function(hook) {
             hookBoss.remove(hook.hookId);
@@ -206,7 +215,7 @@ app.delete('/hooks/:hookId', authenticate, function(req, res) {
 
 // TODO: experimental; remove
 // requires --logfile to be specified
-if (argv.logfile) app.get('/hx/logs', authenticate, function(req, res) {
+if (argv.logfile) router.get('/logs', authenticate, function(req, res) {
     // Find items logged between today and yesterday.
     var options = {
         from: 0,    //new Date() - 24 * 60 * 60 * 1000,
@@ -223,7 +232,7 @@ if (argv.logfile) app.get('/hx/logs', authenticate, function(req, res) {
 });
 
 // TODO: experimental; remove
-app.get('/hx/routelist', authenticate, function(req, res) {
+router.get('/routes', authenticate, function(req, res) {
     console.log('_router:', app._router);
     var output = [];
     app._router.stack.forEach(function(route) {
@@ -244,7 +253,11 @@ app.get('/hx/routelist', authenticate, function(req, res) {
 });
 
 // serve the editor to authenticated users
-app.use('/editor', authenticate, express.static(__dirname + '/editor'));
+router.use('/editor', authenticate, express.static(__dirname + '/editor'));
+
+// mount the app
+winston.info('Mounting application on %s', argv.api_base);
+app.use(argv.api_base, router);
 
 // serve the static content to anyone
 app.use('/', express.static(__dirname + '/public'));

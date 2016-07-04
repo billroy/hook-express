@@ -55,6 +55,36 @@ You can also add usernames to the 'apiUsers' table in hook-express.js.
 
 Code running in a hook has complete access to node modules like 'fs', so it can erase your file system, modify files, and so forth.  Change the default password, and keep your password safe.
 
+## Command Line Options
+
+### --port=3000
+
+Binds the server to a chosen port.  Default port is 3000.
+
+### --load=[filepath || url]
+
+Loads a set of hooks (of the form produced by GET /hx/hooks) from a file or url.  Runs immediately after the server starts up, so it is possible to load from a static file served under /public.
+
+### --ssl and --certs
+
+Specify --ssl=true and --certs=/path/to/certs to engage ssl.
+
+### --logfile=[]
+
+Logging via winston to the console is always enabled, but logging to file is disabled by default.  Use --logfile=filepath to turn on logging to file.
+
+### --loglevel=[info]
+
+By default, the log level is 'info'.  Use --loglevel to change it.
+
+### --capture
+
+Use --capture to capture all 404 requests as new hooks on the 404'ed route.
+
+When --capture is engaged, the first time an unknown route (path/method pair) is called, a 404 is returned and a new hook is created on the route with simple default contents.  The second call to the same route will get the generated hook response instead of 404.
+
+By default, --capture is not engaged, and a 404 is just a 404.
+
 ## Static files
 
 You can add files to be static-served to the public/ directory and hook-express will serve them at '/'.  So, the file public/index.html is the home page for the site.
@@ -81,7 +111,7 @@ The examples below use the excellent "http" utility from HttPie: https://httpie.
     $ http -b -a hook:express :3000/time
     Cannot GET /time
 
-    $ http -b -a hook:express :3000/hooks path=/time hook='res.send(new Date());'
+    $ http -b -a hook:express :3000/hx/hooks path=/time hook='res.send(new Date());'
     {
         "hook": "res.send(new Date());",
         "hookId": "hook_1",
@@ -95,7 +125,7 @@ The examples below use the excellent "http" utility from HttPie: https://httpie.
 
 ## API Example: fetching all hooks
 
-    $ http -a hook:express :3000/hooks
+    $ http -a hook:express :3000/hx/hooks
     {
         "hook_1": {
             "hook": "res.send(new Date());",
@@ -107,7 +137,7 @@ The examples below use the excellent "http" utility from HttPie: https://httpie.
 
 ## API Example: fetching a single hook by hookId
 
-        $ http -a hook:express :3000/hooks/hook_1
+        $ http -a hook:express :3000/hx/hooks/hook_1
         {
             "hook_1": {
                 "hook": "res.send(new Date());",
@@ -120,17 +150,17 @@ The examples below use the excellent "http" utility from HttPie: https://httpie.
 
 ## API Example: deleting a hook
 
-    $ http delete -a hook:express :3000/hooks/hook_1
+    $ http delete -a hook:express :3000/hx/hooks/hook_1
     deleted
 
-    $ http -a hook:express :3000/hooks
+    $ http -a hook:express :3000/hx/hooks
     {}
 
 
 ## API Example: deleting all hooks
 
-    $ http delete -a hook:express :3000/hooks/*
+    $ http delete -a hook:express :3000/hx/hooks/*
     deleted
 
-    $ http -a hook:express :3000/hooks
+    $ http -a hook:express :3000/hx/hooks
     {}

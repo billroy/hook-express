@@ -10,10 +10,15 @@ why isn't console log colorized?
 ---
 API and internals
 
-saveHook should handle array of hooks
+bug: argv.api_base != '/hx' borks client
+    template this through to editor/index.html
+    also public/index.hsml
+
+hookBoss.save should handle array of hooks
 
 method to lock/disable admin api until next restart
-        POST /hx/lock {"confirm": "lock"}
+    POST /hx/lock {"confirm": "lock"}
+    what about the editor static routes?
 
 enable easy embedding in other express apps (like cloudcmd)
 
@@ -49,6 +54,11 @@ letsencrypt integration
 
 ---
 UI
+
+menu on caret at right of hookItem
+    <span class="caret" style='float:right' onclick='showInfo("click"!);'>
+
+factor out client-side hookBoss
 
 editor: can't type in find input
     press control+F
@@ -99,20 +109,10 @@ move the protected api to /hx/hooks?
 
 docker container recipe & test
 
-app.use(cookieParser());
-    app.use(csrf({ cookie: true }));
-    app.use(express.static(path.join(__dirname, config.get('staticContentPath')), {
-        maxAge: (60 * 60 * 24) * 1000
-    }));
 ---
 futures
 
-means to create a route if it doesn't exist
-    have to detect "no route" case - not just "404 being returned" case
-
 database driven routing
-
-glitch-free route replacement
 
 add a way to add a middleware function to a route instead of a bound dispatch function
 
@@ -131,8 +131,6 @@ https://www.npmjs.com/package/cloudcmd
 -limited-duration hooks for demo mode
     self-destruct in x minutes
 
-- clone: var new = Object.assign({}, old);
-
 - editor theme selector
 
 - versioned hooks
@@ -140,8 +138,22 @@ https://www.npmjs.com/package/cloudcmd
 - way to disable hook but leave it defined
 
 - libraries of hooks
+    - ramkvs
+    - loki?
     - mysql
     - mongo
     - redis
 - save/restore hook sets
 - share hook sets
+
+
+---
+Reference
+
+- clone: var new = Object.assign({}, old);
+
+app.use(cookieParser());
+    app.use(csrf({ cookie: true }));
+    app.use(express.static(path.join(__dirname, config.get('staticContentPath')), {
+        maxAge: (60 * 60 * 24) * 1000
+    }));
