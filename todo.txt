@@ -11,7 +11,6 @@ why isn't console log colorized?
 API and internals
 
 saveHook should handle array of hooks
-TODO: make a hook manager
 
 method to lock/disable admin api until next restart
         POST /hx/lock {"confirm": "lock"}
@@ -100,7 +99,11 @@ move the protected api to /hx/hooks?
 
 docker container recipe & test
 
-
+app.use(cookieParser());
+    app.use(csrf({ cookie: true }));
+    app.use(express.static(path.join(__dirname, config.get('staticContentPath')), {
+        maxAge: (60 * 60 * 24) * 1000
+    }));
 ---
 futures
 

@@ -1,6 +1,6 @@
 {
   "name": "hook-express",
-  "version": "0.0.2",
+  "version": "0.3.0",
   "description": "A web hook host and studio for ExpressJS.",
   "main": "hook-express.js",
   "scripts": {

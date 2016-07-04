@@ -19,13 +19,12 @@ var argv = require('yargs')
     .default('capture', env('CAPTURE', false))
     .argv;
 
-console.log('hook-express here! v0.2');
+console.log('hook-express here! v0.3');
 console.log(argv);
 
 var async = require('async');
 var fs = require('fs');
 var request = require('request');
-var require_from_string = require('require-from-string');
 var util = require('util');
 
 // initialize the express app
@@ -43,6 +42,10 @@ var bodyParser = require('body-parser');
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
 
+// initialize hook boss on the app
+var hookBoss = require('./hook-boss.js');
+hookBoss.init({app: app});
+
 // configure logging
 var winston = require('winston');
 
@@ -59,10 +62,16 @@ CustomLogger.prototype.log = function (level, msg, meta, callback) {
     // optionally capture 404s as new hooks
     if (argv.capture && (meta.res.statusCode == 404)) {
         //console.log('creating hook for', meta.req.path);
-        saveHook({
+        hookBoss.save({
             path: meta.req.path,
             method: meta.req.method.toLowerCase(),
-            hook: 'res.send("");'
+            hook: [
+                '// ' + msg,
+                '// generated ' + new Date(),
+                (meta.req.method == 'get') || (meta.req.method == 'GET') ?
+                    'res.send("");' :
+                    'res.send(req.body || req.params || req.query || "");'
+            ].join('\n')
         }, function(err, hook) {
             callback(null, true);
         });
@@ -139,9 +148,6 @@ var context = {
     //db: 'perhaps a database handle here',
 };
 
-var hooks = {};
-var nextHookId = 1;
-
 // middleware to inject context as res.locals.context
 app.use(function(req, res, next) {
     context.requestCount++;
@@ -149,93 +155,12 @@ app.use(function(req, res, next) {
     next();
 });
 
-// find hook in app._routes for monkey-patching
-function findHook(hook) {
-    if (!hook.hookId) return undefined;
-    for (var i=0; i < app._router.stack.length; i++) {
-        var item = app._router.stack[i];
-        if (!item.route) continue;
-        if (item.route.path != hook.path) continue;
-        if (!item.route.stack) continue;
-        if (!item.route.stack.length) continue;
-        if (item.route.stack[0].method != hook.method) continue;
-        if (item.route.stack[0].name != hook.hookId) continue;
-        return item.route.stack[0];
-    }
-    return undefined;
-}
-
-function hookFunctionText(hook) {
-    var hookText = [
-        'module.exports = function ' + hook.hookId + '(req, res) {',
-            hook.hook,
-        '};'
-    ].join('\n');
-    //console.log('hookText:', hookText);
-    return hookText;
-}
-
-
-function saveHook(inputHook, next) {
-
-    var hook = {};
-
-    // validate method
-    var method = inputHook.method || 'get';
-    if (typeof method != 'string') return next('method parameter must be a string');
-    if (http.METHODS.indexOf(method.toUpperCase()) < 0) return next('unsupported http method');
-    if (!(method.toLowerCase() in app)) return next('unsupported app method');
-    hook.method = method;
-
-    // validate path
-    if (!inputHook.path) return next('path parameter not specified');
-    if (typeof inputHook.path != 'string') return next('path parameter must be a string');
-    hook.path = inputHook.path;
-
-    // validate hook
-    if (!inputHook.hook) return next('hook parameter not specified');
-    if (typeof inputHook.hook != 'string') return next('hook parameter must be a string');
-    hook.hook = inputHook.hook;
-
-    // transfer hookId if specified
-    if (inputHook.hookId) {
-        if (typeof inputHook.hookId != 'string') return next('hookId parameter must be a string');
-        hook.hookId = inputHook.hookId;
-    }
-
-    // existing hook: if a route matching the hookId, method, and path exists,
-    // replace its hook function
-    var route = findHook(hook);
-    if (route) {
-        try {
-            // monkey-patch route.handle with hook function by same name
-            route.handle = require_from_string(hookFunctionText(hook));
-            hooks[hook.hookId] = hook;
-            return next(null, hook);
-        } catch(err) {
-            console.log('Error updating hook:', err);
-            return next(err);
-        }
-    }
-
-    // matching hook does not exist; insert a new one
-    try {
-        hook.hookId = 'hook_' + nextHookId++;   // assign new hookId
-        app[hook.method.toLowerCase()](hook.path, require_from_string(hookFunctionText(hook)));
-        hooks[hook.hookId] = hook;
-        return next(null, hook);
-    } catch(err) {
-        console.log('Error creating hook:', err);
-        return next(err);
-    }
-}
-
 app.post('/hooks', authenticate, function(req, res) {
     if (Array.isArray(req.body)) {
         outputHooks = [];
         async.eachSeries(req.body,
             function(hook, next) {
-                saveHook(hook, function(err, hook) {
+                hookBoss.save(hook, function(err, hook) {
                     if (err) return next(err);
                     outputHooks.push(hook);
                     next(null, hook);
@@ -248,7 +173,7 @@ app.post('/hooks', authenticate, function(req, res) {
         );
     }
     else {
-        saveHook(req.body, function(err, hook) {
+        hookBoss.save(req.body, function(err, hook) {
             if (err) return res.status(400).send(err);
             res.send(hook);
         });
@@ -256,53 +181,33 @@ app.post('/hooks', authenticate, function(req, res) {
 });
 
 app.get('/hooks', authenticate, function(req, res) {
-    // convert the hooks object to an array
-    var output = [];
-    Object.keys(hooks).forEach(function(key) {
-        output.push(hooks[key]);
-    });
-    res.send(output);
+    res.send(hookBoss.get());
 });
 
 app.get('/hooks/:hookId', authenticate, function(req, res) {
-    if (req.params.hookId in hooks) res.send(hooks[req.params.hookId]);
+    var hook = hookBoss.get(req.params.hookId || '');
+    if (hook) res.send(hook);
     else res.status(404).send('not found');
 });
 
-function removeHook(hookId) {
-    if (!(hookId in hooks)) return false;
-    app._router.stack.forEach(function(route, index) {
-        if (route.name != 'bound dispatch') return;
-        if (!route.route) return;
-        if (!route.route.stack || !route.route.stack[0]) return;
-        if (route.route.stack[0].name == hookId) {
-            console.log('deleting hook at index:', index);
-            app._router.stack.splice(index, 1);
-        }
-    });
-    delete hooks[hookId];
-    return true;
-}
-
 app.delete('/hooks/:hookId', authenticate, function(req, res) {
     if (req.params.hookId == '*') {
-        Object.keys(hooks).forEach(function(hookId) {
-            removeHook(hookId);
+        hookBoss.get().forEach(function(hook) {
+            hookBoss.remove(hook.hookId);
         });
         res.status(200).send('deleted');
     }
     else {
-        if (removeHook(req.params.hookId)) res.status(200).send('deleted');
+        if (hookBoss.remove(req.params.hookId)) res.status(200).send('deleted');
         else res.status(404).send('not found');
     }
 });
 
 
 // TODO: experimental; remove
+// requires --logfile to be specified
 if (argv.logfile) app.get('/hx/logs', authenticate, function(req, res) {
-    //
     // Find items logged between today and yesterday.
-    //
     var options = {
         from: 0,    //new Date() - 24 * 60 * 60 * 1000,
         until: new Date(),
@@ -311,13 +216,11 @@ if (argv.logfile) app.get('/hx/logs', authenticate, function(req, res) {
         order: 'asc',
         fields: ['req', 'res']
     };
-
     winston.query({}, function (err, results) {
         if (err) return res.status(500).send(err);
         res.send(results);
     });
 });
-
 
 // TODO: experimental; remove
 app.get('/hx/routelist', authenticate, function(req, res) {
@@ -346,35 +249,6 @@ app.use('/editor', authenticate, express.static(__dirname + '/editor'));
 // serve the static content to anyone
 app.use('/', express.static(__dirname + '/public'));
 
-
-// load startup hooks
-function loadHooksFromFile(filepath) {
-    console.log('Loading hooks from file:', filepath);
-    var startupHooks = JSON.parse(fs.readFileSync(filepath).toString());
-    startupHooks.forEach(function(hook, index) {
-        console.log('loading hook:', hook);
-        saveHook(hook, function(err, hook) {
-            if (err) console.log('Load error:', hook, err);
-        });
-    });
-}
-
-function loadHooksFromUrl(url) {
-    console.log('Loading hooks from url:', url);
-    request.get(url, function(err, response, body) {
-        if (err) console.log('Error loading url:', hook, err);
-        var hooks = JSON.parse(body);
-        console.log('LOADED:', typeof hooks, hooks);
-        console.log('loaded hook count:', hooks.length);
-        hooks.forEach(function(hook, index) {
-            console.log('loading hook:', hook);
-            saveHook(hook, function(err, hook) {
-                if (err) console.log('Load error:', hook, err);
-            });
-        });
-    });
-}
-
 // configure SSL
 var server;
 if (argv.ssl) {
@@ -382,20 +256,13 @@ if (argv.ssl) {
 	var ssl_key = fs.readFileSync(argv.certs + '/server.key').toString();
 	var ssl_cert = fs.readFileSync(argv.certs + '/server.crt').toString();
     server = https.createServer({key: ssl_key, cert: ssl_cert}, app);
-	//var ssl_cabundle = fs.readFileSync(argv.certs + '/server.cabundle').toString();
-	//server = https.createServer({key:ssl_key, cert:ssl_cert, ca:ssl_cabundle}, app);
 }
-else {
-	server = http.createServer(app);
-}
+else server = http.createServer(app);
 
+// start the server
 var listener = server.listen(argv.port, function() {
     console.log('Server is listening at:', listener.address());
 
-    if (argv.load) {
-        if (argv.load.startsWith('http://') || argv.load.startsWith('https://')) {
-            loadHooksFromUrl(argv.load);
-        }
-        else loadHooksFromFile(argv.load);
-    }
+    // load optional startup hooks
+    if (argv.load) hookBoss.load(argv.load);
 });
