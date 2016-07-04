@@ -61,7 +61,6 @@ var CustomLogger = winston.transports.CustomLogger = function (options) {
 };
 util.inherits(CustomLogger, winston.Transport);
 CustomLogger.prototype.log = function (level, msg, meta, callback) {
-    // optionally capture 404s as new hooks
 
     if (argv.debug) {
         console.log('CUSTOM LEVEL:', level);
@@ -69,6 +68,13 @@ CustomLogger.prototype.log = function (level, msg, meta, callback) {
         console.log('CUSTOM META:', meta);
     }
 
+    // delete authorization header so it isn't logged;
+    // can't find a way to do this in express-winston
+    if (meta && meta.req && meta.req.headers && meta.req.headers.authorization) {
+        delete meta.req.headers.authorization;
+    }
+
+    // optionally capture 404s as new hooks
     if (argv.capture && meta && meta.res && meta.res.statusCode && (meta.res.statusCode == 404)) {
         //console.log('creating hook for', meta.req.path);
         hookBoss.save({
@@ -133,7 +139,7 @@ var apiUsers = [
 ];
 
 function unauthorized(res) {
-    res.set('WWW-Authenticate', 'Basic realm=Hook Express');
+    res.set('WWW-Authenticate', 'Basic realm=hook-express');
     return res.sendStatus(401);
 }
 
@@ -158,7 +164,7 @@ var context = {
 };
 
 // middleware to inject context as res.locals.context
-app.use(function(req, res, next) {
+app.use(function injectContext(req, res, next) {
     context.requestCount++;
     res.locals.context = context;
     next();
@@ -274,7 +280,7 @@ else server = http.createServer(app);
 
 // start the server
 var listener = server.listen(argv.port, function() {
-    console.log('Server is listening at:', listener.address());
+    winston.info('Server is listening at:', listener.address());
 
     // load optional startup hooks
     if (argv.load) hookBoss.load(argv.load);

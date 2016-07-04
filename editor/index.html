@@ -328,7 +328,7 @@ $(document).ready(function() {
     $(window).bind('keydown', function(event) {
         if (event.crtlKey || event.altKey || event.metaKey) {
             var key = String.fromCharCode(event.which).toLowerCase();
-            if (key == 's') {
+            if ((key == 's') || (key == 'd')) {
                 saveEdit();
                 event.preventDefault();
                 return false;

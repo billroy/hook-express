@@ -40,9 +40,9 @@ module.exports = {
             if (!item.route.stack.length) continue;
             if (item.route.stack[0].method != hook.method) continue;
             if (item.route.stack[0].name != hook.hookId) continue;
-            return item.route.stack[0];
+            return item;    // found!
         }
-        return undefined;
+        return undefined;   // not found
     },
 
     // return the function text for a wrapped hook ready for binding
@@ -90,7 +90,7 @@ module.exports = {
         if (route) {
             try {
                 // monkey-patch route.handle with hook function by same name
-                route.handle = require_from_string(this.functionText(hook));
+                route.route.stack[0].handle = require_from_string(this.functionText(hook));
                 this.hooks[hook.hookId] = hook;
                 return next(null, hook);
             } catch(err) {
@@ -99,7 +99,7 @@ module.exports = {
             }
         }
 
-        // matching hook does not exist; insert a new one
+        // get here when matching hook does not exist; insert a new one
         try {
             hook.hookId = 'hook_' + this.nextHookId++;   // assign new hookId
             this.app[hook.method.toLowerCase()](hook.path, require_from_string(this.functionText(hook)));

@@ -1,10 +1,12 @@
 TODO hook-express
 -br
 
+console.log -> winston.info
+
+
 ---
 logging
 
-hide/blacklist req.headers.authorization
 why isn't console log colorized?
 
 ---
@@ -18,7 +20,6 @@ hookBoss.save should handle array of hooks
 
 method to lock/disable admin api until next restart
     POST /hx/lock {"confirm": "lock"}
-    what about the editor static routes?
 
 enable easy embedding in other express apps (like cloudcmd)
 
@@ -99,13 +100,6 @@ detailed log view per hook
 
 ---
 Hygiene
-
-move the protected api to /hx/hooks?
-    /hx/hooks
-    /hx/logs
-    /hx/lock
-    /hx/users
-    where the editor?  /hx/editor? /editor?
 
 docker container recipe & test
 
