@@ -7,7 +7,7 @@ console.log -> winston.info
 ---
 logging
 
-why isn't console log colorized?
+why isn't winston console log colorized?
 
 ---
 API and internals
@@ -28,7 +28,9 @@ optional additional user auth table for hooks and static-served files from /publ
     hook to add/delete/list user to apiUsers
 
 get rid of server::hooks structure?
-    - use routing tables directly
+    use routing tables directly?
+    *** where to save/recall original function text?
+        (deparse from handler?  ugh...)
     how to identify hooks for replacement?
         name is working pretty well...
 

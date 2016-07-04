@@ -200,6 +200,7 @@ router.get('/hooks', authenticate, function(req, res) {
 });
 
 router.get('/hooks/:hookId', authenticate, function(req, res) {
+    winston.info('REQUEST.ROUTE:', req.route);
     var hook = hookBoss.get(req.params.hookId || '');
     if (hook) res.send(hook);
     else res.status(404).send('not found');
