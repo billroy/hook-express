@@ -39,13 +39,10 @@ var hooks = [];
 var api_base = '/hx';
 
 function renderHookPane() {
-    var markup = '';
     var source = $('#hook-list-template').html();
     var template = Handlebars.compile(source);
-    $.each(hooks, function(index, hook) {
-        hook.index = index;
-        markup += template(hook);
-    });
+    var markup = template(hooks);
+    console.log('HOOKS MARKUP:', markup);
     $('#hooks').html(markup);
 }
 
@@ -374,16 +371,19 @@ $(document).ready(function() {
 
 <!-- Templates -->
 <script id='hook-list-template' type='text/x-handlebars-template'>
-    <span class='hook-list-item' onclick='selectHook(event, {{index}})'
-            onmouseover='onMouseOverHook({{index}});'
-            onmouseout='onMouseOutHook({{index}});'>
-        {{method}} {{path}}
-<!--
-        <span style='float:right'
-            class='glyphicon glyphicon-triangle-bottom hook-menu-handle' aria-hidden='true'></span>
--->
-    </span><br>
+    {{#each .}}
+        <span class='hook-list-item' onclick='selectHook(event, {{@index}})'
+                onmouseover='onMouseOverHook({{@index}});'
+                onmouseout='onMouseOutHook({{@index}});'>
+            {{method}} {{path}}
+        </span><br>
+    {{/each}}
 </script>
+
+<!--
+    <span style='float:right'
+        class='glyphicon glyphicon-triangle-bottom hook-menu-handle' aria-hidden='true'></span>
+-->
 
 
 <!-- Page structure -->

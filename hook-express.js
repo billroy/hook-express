@@ -120,6 +120,7 @@ expressWinston.requestWhitelist.push('ip');
 expressWinston.requestWhitelist.push('ips');
 expressWinston.requestWhitelist.push('params');
 expressWinston.requestWhitelist.push('path');
+expressWinston.requestWhitelist.push('route');
 expressWinston.responseWhitelist.push('body');
 app.use(expressWinston.logger({
     winstonInstance: winston
