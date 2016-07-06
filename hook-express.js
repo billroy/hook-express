@@ -31,10 +31,19 @@ var util = require('util');
 // initialize the express app
 var express = require('express');
 var app = express();
+var io;                         // socket.io handle
 var router = express.Router();  // router instance for /hx routes
 var helmet = require('helmet');
 app.use(helmet());              // engage security protections
 app.enable('trust proxy');      // configure to support x-forwarded-for header for req.ip
+
+var cookie_secret = '343243sfdjksdf423443';
+var cookie_signature = require('cookie-signature');
+//var cookieParser = require('cookie-parser');
+var session = require('express-session');
+app.use(session({
+    secret: cookie_secret
+}));
 
 var http = require('http');
 var https = require('spdy');
@@ -74,6 +83,19 @@ CustomLogger.prototype.log = function (level, msg, meta, callback) {
         delete meta.req.headers.authorization;
     }
 
+    // update socket.io clients if it's a hook invocation
+    // TODO: remove meta.req.route
+    // TODO: populate level, timestamp?
+    if (msg) meta.message = msg;
+    if (meta && meta.req && meta.req.route && meta.req.route.stack &&
+            (meta.req.route.stack.length == 1) &&
+            (meta.req.route.stack[0].name.startsWith('hook_'))) {
+        io.emit('hx.hook.log', {
+            hookId: meta.req.route.stack[0].name,
+            log: meta
+        });
+    }
+
     // optionally capture 404s as new hooks
     if (argv.capture && meta && meta.res && meta.res.statusCode && (meta.res.statusCode == 404)) {
         //console.log('creating hook for', meta.req.path);
@@ -88,6 +110,7 @@ CustomLogger.prototype.log = function (level, msg, meta, callback) {
                     'res.send(req.body || req.params || req.query || "");'
             ].join('\n')
         }, function(err, hook) {
+            io.emit('hx.hook.update', hook);
             callback(null, true);
         });
     }
@@ -121,7 +144,11 @@ expressWinston.requestWhitelist.push('ips');
 expressWinston.requestWhitelist.push('params');
 expressWinston.requestWhitelist.push('path');
 expressWinston.requestWhitelist.push('route');
+expressWinston.requestWhitelist.push('session');
+
 expressWinston.responseWhitelist.push('body');
+expressWinston.responseWhitelist.push('headers');
+
 app.use(expressWinston.logger({
     winstonInstance: winston
 }));
@@ -184,6 +211,7 @@ router.post('/hooks', authenticate, function(req, res) {
             },
             function(err) {
                 if (err) return res.status(400).send(err);
+                io.emit('hx.hook.update', outputHooks);
                 res.send(outputHooks);
             }
         );
@@ -191,6 +219,7 @@ router.post('/hooks', authenticate, function(req, res) {
     else {
         hookBoss.save(req.body, function(err, hook) {
             if (err) return res.status(400).send(err);
+            io.emit('hx.hook.update', hook);
             res.send(hook);
         });
     }
@@ -210,12 +239,16 @@ router.get('/hooks/:hookId', authenticate, function(req, res) {
 router.delete('/hooks/:hookId', authenticate, function(req, res) {
     if (req.params.hookId == '*') {
         hookBoss.get().forEach(function(hook) {
+            io.emit('hx.hook.delete', hook.hookId);
             hookBoss.remove(hook.hookId);
         });
         res.status(200).send('deleted');
     }
     else {
-        if (hookBoss.remove(req.params.hookId)) res.status(200).send('deleted');
+        if (hookBoss.remove(req.params.hookId)) {
+            io.emit('hx.hook.delete', req.params.hookId);
+            res.status(200).send('deleted');
+        }
         else res.status(404).send('not found');
     }
 });
@@ -281,9 +314,48 @@ if (argv.ssl) {
 else server = http.createServer(app);
 
 // start the server
+var sockets = [];
 var listener = server.listen(argv.port, function() {
     winston.info('Server is listening at:', listener.address());
 
     // load optional startup hooks
     if (argv.load) hookBoss.load(argv.load);
+
+    // start up socket.io
+    io = require('socket.io').listen(listener);
+
+    io.use(function(socket, next) {
+        //console.log('handshake session data:', socket.request.session);
+        //console.log('handshake cookie data:', socket.request.headers.cookie);
+
+        // parse the cookies.  surely there is a better way.
+        // TODO: consider refactor per express-session/index.js::getcookie
+        var cookie_parts = socket.request.headers.cookie.split(';');
+        var cookies = {};
+        cookie_parts.forEach(function(cookie_text, index) {
+            var cookie_text_parts = cookie_text.split('=');
+            cookies[cookie_text_parts[0].trim()] = decodeURIComponent( cookie_text_parts[1].trim());
+        });
+        var encoded_cookie = cookies['connect.sid'].slice(2);
+        var cookie = cookie_signature.unsign(encoded_cookie, cookie_secret);
+        if (cookie === false) return next('unauthorized');
+        next();
+    });
+
+    io.sockets.on('connection', function(socket) {
+        sockets.push(socket);
+        socket.on('hx.pong', function(data) {
+            console.log('*** Pong:', data);
+        });
+        socket.on('hello', function(data) {
+            console.log('*** Hello:', data);
+        });
+
+        socket.emit('hx.ping', {time: new Date().getTime()});
+
+        //socket.on('getlogs', function(data) {
+        //    socket.emit('logs', data);
+        //});
+    });
+
 });

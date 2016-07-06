@@ -13,8 +13,11 @@ var Pushit = {
 	}
 };
 Pushit.init();
-Pushit.on('ping', function(data) {
-    data.pongtime = new Date().getTime();
-    console.log('ping', data);
-    Pushit.send('pong', data);
+Pushit.on('hx.ping', function(data) {
+    console.log('hx.ping', data);
+    if (data) {
+        data.pongtime = new Date().getTime();
+        Pushit.send('hx.pong', data);
+    }
 });
+Pushit.send('hx.hello', {});

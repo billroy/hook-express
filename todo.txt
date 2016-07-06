@@ -1,12 +1,14 @@
 TODO hook-express
 -br
 
-console.log -> winston.info
 
+bug: auto-captured routes aren't sent via io.emit
 
 ---
 logging
 
+don't log /hx routes?
+console.log -> winston.info
 why isn't winston console log colorized?
 
 ---

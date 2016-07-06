@@ -30,6 +30,9 @@
 
     <link href='/hx/editor/css/main.css' rel='stylesheet' type='text/css'>
 
+    <script src='/socket.io/socket.io.js' type='text/javascript'></script>
+    <script src='/hx/editor/js/pushit.js' type='text/javascript'></script>
+
 </head>
 <body>
 
@@ -42,7 +45,6 @@ function renderHookPane() {
     var source = $('#hook-list-template').html();
     var template = Handlebars.compile(source);
     var markup = template(hooks);
-    console.log('HOOKS MARKUP:', markup);
     $('#hooks').html(markup);
 }
 
@@ -101,13 +103,16 @@ function selectHook(event, index) {
     }
 }
 
-function selectHookByHookId(hookId) {
+function findHookById(hookId) {
     for (var i=0; i < hooks.length; i++) {
-        if (hooks[i].hookId == hookId) {
-            selectHook(null, i);
-            return;
-        }
+        if (hooks[i].hookId == hookId) return i;
     }
+    return -1;
+}
+
+function selectHookByHookId(hookId) {
+    var index = findHookById(hookId);
+    if (index >= 0) selectHook(null, index);
 }
 
 function runSelectedHook() {
@@ -209,6 +214,7 @@ function deleteHook() {
         method: 'delete',
         success: function(data, textstatus, jqxhr) {
             showInfo('Hook deleted.');
+/*
             loadHookPane(function() {
                 if (selectedHook > hooks.length-1) selectedHook--;
                 if (hooks.length) selectHook(null, selectedHook);
@@ -217,6 +223,7 @@ function deleteHook() {
                     $('#method').val('');
                 }
             });
+*/
         },
         error: function(jqxhr, textstatus, errorthrown) {
             showError('Error: ' + textstatus + ' ' + errorthrown);
@@ -265,9 +272,11 @@ function saveEdit() {
         contentType: 'application/json',
         success: function(data, textstatus, jqxhr) {
             showInfo('Hook deployed.');
+/*
             loadHookPane(function() {
                 selectHookByHookId(data.hookId);
             });
+*/
         },
         error: function(jqxhr, textstatus, errorthrown) {
             showError('Error: ' + textstatus + ' ' + errorthrown);
@@ -286,6 +295,10 @@ function showGithub() {
 
 
 $(document).ready(function() {
+
+    // register partials - must be before loadHookPane()
+    Handlebars.registerPartial('hook-list-item-template', $('#hook-list-item-template').html());
+
     loadHookPane();
 
     // one-time editor initialization
@@ -352,6 +365,46 @@ $(document).ready(function() {
     $('#path').on('input', showSaveCancel);
     hideSaveCancel();
 
+    Pushit.on('hx.hook.update', function(hook) {
+        console.log('hook update received:', hook);
+        var index = findHookById(hook.hookId);
+        if (index >= 0) {
+            hooks[index].path = hook.path || '';
+            hooks[index].method = hook.method || '';
+            hooks[index].hook = hook.hook || '';
+        }
+        else {
+            hooks.push(hook);
+        }
+        renderHookPane();
+        if (selectedHook >= 0) selectHook(null, selectedHook);
+        showInfo('Hook updated: ' + hook.hookId);
+    });
+    Pushit.on('hx.hook.delete', function(data) {
+        console.log('hook delete received:', data);
+        var index = findHookById(data);
+        if (index >= 0) {
+            hooks.splice(index, 1);
+            renderHookPane();
+            showInfo('Hook deleted: ' + data);
+        }
+    });
+    Pushit.on('hx.hook.log', function(data) {
+        console.log('log data received:', data);
+        if (data && data.log && data.log.message) {
+            showInfo(data.log.message);
+            var index = findHookById(data.hookId);
+            if (index >= 0) {
+                if ('count' in hooks[index]) hooks[index].count++;
+                else hooks[index].count = 1;
+
+                // update hook pane
+                renderHookPane();
+            }
+
+        }
+    });
+
 /*
     $('#header-right').html([
         '<a href="', location.origin, '" target="_blank">',
@@ -370,13 +423,17 @@ $(document).ready(function() {
 
 
 <!-- Templates -->
+<script id='hook-list-item-template' type='text/x-handlebars-template'>
+    <span class='hook-list-item' onclick='selectHook(event, {{@index}})'
+            onmouseover='onMouseOverHook({{@index}});'
+            onmouseout='onMouseOutHook({{@index}});'>
+        {{method}} {{path}} <span style="float:right">{{count}}</span>
+    </span><br>
+</script>
+
 <script id='hook-list-template' type='text/x-handlebars-template'>
     {{#each .}}
-        <span class='hook-list-item' onclick='selectHook(event, {{@index}})'
-                onmouseover='onMouseOverHook({{@index}});'
-                onmouseout='onMouseOutHook({{@index}});'>
-            {{method}} {{path}}
-        </span><br>
+        {{> hook-list-item-template }}
     {{/each}}
 </script>
 
