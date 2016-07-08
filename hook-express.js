@@ -9,7 +9,7 @@ function env(key, default_value) {
 
 // parse command line arguments
 var argv = require('yargs')
-    .usage('Usage: $0 --port=[3000] --api_base=[/hx] --ssl --ssl_certs=[~/.certs] --load=[file|url] --logfile=[] --loglevel=[info] --capture')
+    .usage('Usage: $0 --port=[3000] --api_base=[/hx] --ssl --ssl_certs=[~/.certs] --load=[file|url] --logfile=[] --loglevel=[info] --capture --no_static')
     .default('port', env('PORT', 3000))
     .default('api_base', env('API_BASE', '/hx'))
     .default('ssl', env('SSL', false))
@@ -18,6 +18,7 @@ var argv = require('yargs')
     .default('logfile', env('LOGFILE', undefined))
     .default('loglevel', env('LOGLEVEL', 'info'))
     .default('capture', env('CAPTURE', false))
+    .default('no_static', env('NO_STATIC', undefined))
     .argv;
 
 console.log('hook-express here! v0.3');
@@ -301,7 +302,7 @@ winston.info('Mounting application on %s', argv.api_base);
 app.use(argv.api_base, router);
 
 // serve the static content to anyone
-app.use('/', express.static(__dirname + '/public'));
+if (!argv.no_static) app.use('/', express.static(__dirname + '/public'));
 
 // configure SSL
 var server;
@@ -330,15 +331,18 @@ var listener = server.listen(argv.port, function() {
 
         // parse the cookies.  surely there is a better way.
         // TODO: consider refactor per express-session/index.js::getcookie
+        if (!socket || !socket.request || !socket.request.headers ||
+            !socket.request.headers.cookie) return('unauthorized.');
         var cookie_parts = socket.request.headers.cookie.split(';');
         var cookies = {};
         cookie_parts.forEach(function(cookie_text, index) {
             var cookie_text_parts = cookie_text.split('=');
             cookies[cookie_text_parts[0].trim()] = decodeURIComponent( cookie_text_parts[1].trim());
         });
+        if (!cookies['connect.sid']) return('unauthorized..');
         var encoded_cookie = cookies['connect.sid'].slice(2);
         var cookie = cookie_signature.unsign(encoded_cookie, cookie_secret);
-        if (cookie === false) return next('unauthorized');
+        if (cookie === false) return next('unauthorized...');
         next();
     });
 

@@ -2,7 +2,16 @@ TODO hook-express
 -br
 
 
-bug: auto-captured routes aren't sent via io.emit
+click count, see log
+
+initialize counts at startup
+re-initialize counts every io.connect
+track hit counts in the server
+
+make the log editor read-only
+add buttons for next/prev log entry
+show the buttons during 'log mode'
+investigate bootstrap tabs for hook code / log display panes
 
 ---
 logging
@@ -16,7 +25,7 @@ API and internals
 
 bug: argv.api_base != '/hx' borks client
     template this through to editor/index.html
-    also public/index.hsml
+    also public/index.html
 
 hookBoss.save should handle array of hooks
 
@@ -109,6 +118,8 @@ docker container recipe & test
 
 ---
 futures
+
+socket.io client for clustering
 
 database driven routing
 

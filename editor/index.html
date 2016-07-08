@@ -70,6 +70,32 @@ function getIndex(hookurl) {
     return undefined;
 };
 
+var logs = {};
+function saveLogEntry(logEntry) {
+    if (!(logEntry.hookId in logs)) logs[logEntry.hookId] = [logEntry];
+    else logs[logEntry.hookId].push(logEntry);
+}
+
+function renderLogEntry(logEntry) {
+    console.log('renderLogEntry:', logEntry);
+    editor.setValue(JSON.stringify(logEntry.log, null, 4));
+    console.log('editor:', editor.getValue());
+    editorChanges = 0;
+    hideSaveCancel();
+    editor.moveCursorTo(0, 0);
+    editor.clearSelection();
+}
+
+function onClickLogCount(event, index) {
+    var hookId = hooks[index].hookId;
+    if (logs[hookId] && (logs[hookId].length > 0)) {
+        renderLogEntry(logs[hookId][logs[hookId].length-1]);
+        event.stopPropagation();
+        event.preventDefault();
+        return false;
+    }
+    return true;
+}
 
 var editor;
 var editorChanges;
@@ -400,6 +426,9 @@ $(document).ready(function() {
 
                 // update hook pane
                 renderHookPane();
+
+                // store the log entry
+                saveLogEntry(data);
             }
 
         }
@@ -427,7 +456,7 @@ $(document).ready(function() {
     <span class='hook-list-item' onclick='selectHook(event, {{@index}})'
             onmouseover='onMouseOverHook({{@index}});'
             onmouseout='onMouseOutHook({{@index}});'>
-        {{method}} {{path}} <span style="float:right">{{count}}</span>
+        {{method}} {{path}} <span style="float:right" onclick='onClickLogCount(event, {{@index}});'>{{count}}</span>
     </span><br>
 </script>
 
