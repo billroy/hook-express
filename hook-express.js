@@ -326,24 +326,38 @@ var listener = server.listen(argv.port, function() {
     io = require('socket.io').listen(listener);
 
     io.use(function(socket, next) {
-        //console.log('handshake session data:', socket.request.session);
         //console.log('handshake cookie data:', socket.request.headers.cookie);
+        //console.log('IO.USE AUTH CHECK');
 
         // parse the cookies.  surely there is a better way.
         // TODO: consider refactor per express-session/index.js::getcookie
-        if (!socket || !socket.request || !socket.request.headers ||
-            !socket.request.headers.cookie) return('unauthorized.');
-        var cookie_parts = socket.request.headers.cookie.split(';');
-        var cookies = {};
-        cookie_parts.forEach(function(cookie_text, index) {
-            var cookie_text_parts = cookie_text.split('=');
-            cookies[cookie_text_parts[0].trim()] = decodeURIComponent( cookie_text_parts[1].trim());
-        });
-        if (!cookies['connect.sid']) return('unauthorized..');
-        var encoded_cookie = cookies['connect.sid'].slice(2);
-        var cookie = cookie_signature.unsign(encoded_cookie, cookie_secret);
-        if (cookie === false) return next('unauthorized...');
-        next();
+        var cookie, encoded_cookie, cookie_text_parts;
+        if (socket && socket.request && socket.request.headers &&
+                socket.request.headers.cookie) {
+            cookie_parts = socket.request.headers.cookie.split(';');
+            var cookies = {};
+            cookie_parts.forEach(function(cookie_text, index) {
+                var cookie_text_parts = cookie_text.split('=');
+                cookies[cookie_text_parts[0].trim()] = decodeURIComponent( cookie_text_parts[1].trim());
+            });
+            if (!cookies['connect.sid']) return next('unauthorized..');
+            encoded_cookie = cookies['connect.sid'].slice(2);
+            cookie = cookie_signature.unsign(encoded_cookie, cookie_secret);
+            if (cookie === false) return next('unauthorized...');
+            //console.log('authenticated via cookie');
+            return next();
+        }
+        else if (socket && socket.handshake && socket.handshake.headers &&
+                    socket.handshake.headers['x-hx-auth']) {
+            //console.log('attempting x-hx-auth');
+            cookie_text_parts = socket.handshake.headers['x-hx-auth'].split('=');
+            encoded_cookie = decodeURIComponent(cookie_text_parts[1].trim());
+            cookie = cookie_signature.unsign(encoded_cookie.slice(2), cookie_secret);
+            if (cookie === false) return next('unauthorized....');
+            //console.log('authenticated via x-hx-auth');
+            return next();
+        }
+        else return next('unauthorized');
     });
 
     io.sockets.on('connection', function(socket) {

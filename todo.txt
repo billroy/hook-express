@@ -12,6 +12,14 @@ make the log editor read-only
 add buttons for next/prev log entry
 show the buttons during 'log mode'
 investigate bootstrap tabs for hook code / log display panes
+---
+
+.startup hook
+--no-socket-io flag
+
+---
+
+ioclient
 
 ---
 logging
